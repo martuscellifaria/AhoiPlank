@@ -1,0 +1,10 @@
+{
+	"project_name": "AhoiPlank",
+	"build_path": "./build/App/",
+	"execution_path": "./build/App/",
+	"build_as": "release",
+	"version": "99.99.99",
+	"company": "AhoiTools",
+	"description": "Your project is owned by AhoiTools",
+	"use_qt6": true
+}

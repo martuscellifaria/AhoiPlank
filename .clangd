@@ -1,0 +1,16 @@
+CompileFlags:
+  Add: [-Wall, -Wextra]
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - performance-*
+      - cppcoreguidelines-special-member-functions
+      - modernize-use-override
+      - modernize-use-nullptr
+      - modernize-use-using
+      - readability-braces-around-statements
+      - readability-container-size-empty
+    Remove: []
+    CheckOptions: {}
