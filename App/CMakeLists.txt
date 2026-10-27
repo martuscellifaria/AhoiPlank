@@ -10,6 +10,10 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Gui Widgets)
 find_package(LayerShellQt REQUIRED)
 qt_standard_project_setup()
 
+if(QT_KNOWN_POLICY_QTP0001)
+    qt_policy(SET QTP0001 NEW)
+endif()
+
 qt_add_executable(AhoiPlank src/AhoiPlank.cpp)
 target_include_directories(AhoiPlank PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -18,7 +22,7 @@ file(GLOB_RECURSE PROJECT_QML_FILES CONFIGURE_DEPENDS
 )
 
 foreach(f IN LISTS PROJECT_QML_FILES)
-    file(RELATIVE_PATH _rel "${CMAKE_CURRENT_SOURCE_DIR}" "${f}")
+    file(RELATIVE_PATH _rel "${CMAKE_CURRENT_SOURCE_DIR}/qml" "${f}")
     set_source_files_properties("${f}" PROPERTIES
         QT_RESOURCE_ALIAS "${_rel}")
 endforeach()
@@ -51,12 +55,12 @@ if(WIN32)
         ${CMAKE_CURRENT_SOURCE_DIR}/version.rc
         @ONLY
     )
-    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.rc)
+    target_sources(AhoiPlank PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.rc)
 else()
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/version.c.in
         ${CMAKE_CURRENT_SOURCE_DIR}/version.c
         @ONLY
     )
-    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.c)
+    target_sources(AhoiPlank PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.c)
 endif()
