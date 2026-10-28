@@ -17,7 +17,15 @@ ApplicationWindow {
     readonly property color pastel_cyan:   "#7dcfff"
     readonly property color pastel_pink:   "#f7768e"
 
-    onActiveChanged: if (!active) { app.quit() }
+    property bool was_active: false
+
+    onActiveChanged: {
+        if (active) {
+            was_active = true
+        } else if (was_active) {
+            app.quit()
+        }
+    }
 
     Shortcut { sequence: "Esc";    onActivated: app.quit() }
     Shortcut { sequence: "Return"; onActivated: app.launch(list.currentIndex) }

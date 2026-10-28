@@ -7,4 +7,3 @@ It is kind of like rofi/wofi.
 Also missing features.
 
 # TODOs
-- Add a fuzzy finder.

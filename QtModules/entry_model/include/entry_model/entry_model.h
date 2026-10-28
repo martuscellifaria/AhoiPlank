@@ -4,6 +4,7 @@
 #include <QString>
 #include <QVector>
 #include <QQuickImageProvider>
+#include <qhashfunctions.h>
 
 
 class entry_model : public QAbstractListModel {
@@ -28,6 +29,7 @@ private:
         QString exec;
         QString comment;
         QString icon;
+	QString lower_name;
     };
 
     QVector<entry> all_;

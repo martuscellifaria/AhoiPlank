@@ -8,6 +8,88 @@
 #include <QPixmap>
 #include <algorithm>
 
+namespace {
+
+double fuzzy_score(const QString& q, const QString& s) {
+    if (q.isEmpty()) {
+        return 0.0;
+    }
+    if (s.isEmpty()) {
+        return -1e9;
+    }
+
+    const int qn = q.size();
+    const int sn = s.size();
+
+    double score = 0.0;
+    int qi = 0;
+    int last_match = -2;
+    int consecutive = 0;
+
+    for (int si = 0; si < sn && qi < qn; ++si) {
+        const QChar sc = s.at(si);
+        const QChar qc = q.at(qi);
+
+        if (sc.toLower() != qc.toLower()) {
+            continue;
+        }
+
+        double char_score = 0.0;
+
+        if (si == 0) {
+            char_score += 2.0;
+        } else if (s.at(si - 1) == ' ' || s.at(si - 1) == '-'
+                   || s.at(si - 1) == '_' || s.at(si - 1) == '.'
+                   || s.at(si - 1) == '/') {
+            char_score += 1.0;
+        } else if (s.at(si - 1).isLower() && sc.isUpper()) {
+            char_score += 1.0;
+        }
+
+        if (last_match == si - 1) {
+            consecutive += 1;
+            char_score += 1.0 + consecutive * 0.5;
+        } else {
+            consecutive = 0;
+            if (last_match >= 0) {
+                const int gap = si - last_match - 1;
+                char_score -= gap * 0.5;
+            }
+        }
+
+        score += char_score;
+        last_match = si;
+        ++qi;
+    }
+
+    if (qi < qn) {
+        return -1e9;
+    }
+
+    score -= static_cast<double>(sn) * 0.01;
+
+    return score;
+}
+
+double fuzzy_score_multi(const QString& query, const QString& target) {
+    const QStringList terms = query.split(' ', Qt::SkipEmptyParts);
+    if (terms.isEmpty()) {
+        return 0.0;
+    }
+
+    double total = 0.0;
+    for (const auto& term : terms) {
+        const double s = fuzzy_score(term, target);
+        if (s < -1e8) {
+            return -1e9;
+        }
+        total += s;
+    }
+    return total;
+}
+
+} // namespace
+
 entry_model::entry_model(QObject* parent) : QAbstractListModel(parent) {
     load_desktop_files();
 }
@@ -41,13 +123,36 @@ QHash<int, QByteArray> entry_model::roleNames() const {
 
 void entry_model::set_filter(const QString& query) {
     beginResetModel();
-    filtered_.clear();
-    const QString q = query.trimmed().toLower();
-    for (const auto& e : all_) {
-        if (q.isEmpty() || e.name.toLower().contains(q)) {
-            filtered_.append(e);
+
+    const QString q = query.trimmed();
+
+    if (q.isEmpty()) {
+        filtered_ = all_;
+        endResetModel();
+        return;
+    }
+
+    QVector<QPair<double, int>> scored;
+    scored.reserve(all_.size());
+
+    for (int i = 0; i < all_.size(); ++i) {
+        const double s = fuzzy_score_multi(q, all_.at(i).lower_name);
+        if (s > -1e8) {
+            scored.append({ s, i });
         }
     }
+
+    std::sort(scored.begin(), scored.end(),
+              [](const QPair<double, int>& a, const QPair<double, int>& b) {
+                  return a.first > b.first;
+              });
+
+    filtered_.clear();
+    filtered_.reserve(scored.size());
+    for (const auto& pair : scored) {
+        filtered_.append(all_.at(pair.second));
+    }
+
     endResetModel();
 }
 
@@ -99,12 +204,13 @@ void entry_model::load_desktop_files() {
                 continue;
             }
 
-            all_.append({
-                s.value("Name").toString(),
-                s.value("Exec").toString(),
-                s.value("Comment").toString(),
-                s.value("Icon").toString(),
-            });
+	    entry e;
+            e.name = s.value("Name").toString();
+            e.exec = s.value("Exec").toString();
+            e.comment = s.value("Comment").toString();
+            e.icon = s.value("Icon").toString();
+            e.lower_name = e.name.toLower();
+            all_.append(e);
             s.endGroup();
         }
     }
