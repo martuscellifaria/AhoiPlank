@@ -7,6 +7,8 @@
 #include <QString>
 #include <QWindow>
 #include <QTimer>
+#include <QLocalServer>
+#include <QLocalSocket>
 #include <LayerShellQt/Window>
 #include <LayerShellQt/Shell>
 
@@ -23,7 +25,28 @@ extern const char* embedded_version;
 
 int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
+    {
+        QLocalSocket sock;
+        sock.connectToServer("ahoiplank-socket");
+        if (sock.waitForConnected(100)) {
+            sock.write("quit");
+            sock.waitForBytesWritten(100);
+            return 0;
+        }
+    }
 
+    QLocalServer::removeServer("ahoiplank-socket");
+    QLocalServer server;
+    if (!server.listen("ahoiplank-socket")) {
+        qWarning() << "could not listen on ahoiplank-socket:" << server.errorString();
+    }
+    QObject::connect(&server, &QLocalServer::newConnection, [&]() {
+        auto* c = server.nextPendingConnection();
+        QObject::connect(c, &QLocalSocket::readyRead, [c]() {
+            c->readAll();
+            QCoreApplication::quit();
+        });
+    });
     entry_model controller;
 
     QQmlApplicationEngine engine;
