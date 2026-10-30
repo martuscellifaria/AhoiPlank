@@ -5,9 +5,6 @@ It contains currently fuzzy search, `.desktop` file parsing, icon theme support,
 
 ## How to build
 
-I plan to have two options. Native and devcontainer.
-The devcontainer is under construction right now, but it will work at some time.
-
 ### Native build dependencies
 
 For a native build, you will need:
