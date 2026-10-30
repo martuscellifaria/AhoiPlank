@@ -1,0 +1,45 @@
+set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_PROCESSOR arm64)
+
+execute_process(
+    COMMAND uname -m
+    OUTPUT_VARIABLE HOST_ARCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(HOST_ARCH STREQUAL "x86_64")
+    set(LLVM_SUFFIX "x86_64")
+else()
+    set(LLVM_SUFFIX "aarch64")
+endif()
+
+set(LLVM_MINGW_PATH "/opt/llvm-mingw-20260616-ucrt-ubuntu-22.04-${LLVM_SUFFIX}")
+
+if(NOT EXISTS "${LLVM_MINGW_PATH}/bin/clang")
+    message(FATAL_ERROR "llvm-mingw not found at ${LLVM_MINGW_PATH}")
+endif()
+
+set(CMAKE_C_COMPILER ${LLVM_MINGW_PATH}/bin/clang)
+set(CMAKE_CXX_COMPILER ${LLVM_MINGW_PATH}/bin/clang++)
+
+set(CMAKE_C_COMPILER_TARGET aarch64-w64-mingw32)
+set(CMAKE_CXX_COMPILER_TARGET aarch64-w64-mingw32)
+
+set(CMAKE_RC_COMPILER ${LLVM_MINGW_PATH}/bin/llvm-rc)
+set(CMAKE_AR ${LLVM_MINGW_PATH}/bin/llvm-ar)
+set(CMAKE_RANLIB ${LLVM_MINGW_PATH}/bin/llvm-ranlib)
+set(CMAKE_LINKER ${LLVM_MINGW_PATH}/bin/lld)
+
+set(CMAKE_FIND_ROOT_PATH ${LLVM_MINGW_PATH})
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-static -fuse-ld=lld")
+set(CMAKE_CXX_FLAGS_INIT "-stdlib=libc++ -static")
+set(CMAKE_CXX_STANDARD_LIBRARIES_INIT "-lc++ -lc++abi -lunwind -lmingw32 -lmingwex -lmsvcrt -lucrt")
