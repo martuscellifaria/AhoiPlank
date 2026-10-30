@@ -1,1 +1,1 @@
-add_subdirectory(entry_model)
+add_subdirectory(EntryModel)

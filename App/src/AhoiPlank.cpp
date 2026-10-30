@@ -1,5 +1,5 @@
 #include "version.h"
-#include "entry_model.h"
+#include "EntryModel.h"
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -11,14 +11,9 @@
 #include <QLocalSocket>
 #include <LayerShellQt/Window>
 #include <LayerShellQt/Shell>
-
-#ifdef _WIN32
-    #include <windows.h>
-#else
-    #include <sys/file.h>
-    #include <unistd.h>
-    #include <cerrno>
-#endif
+#include <sys/file.h>
+#include <unistd.h>
+#include <cerrno>
 
 extern const char* embedded_version;
 
@@ -47,10 +42,10 @@ int main(int argc, char* argv[]) {
             QCoreApplication::quit();
         });
     });
-    entry_model controller;
+    EntryModel controller;
 
     QQmlApplicationEngine engine;
-    engine.addImageProvider("icon", new icon_provider);
+    engine.addImageProvider("icon", new IconProvider);
     engine.rootContext()->setContextProperty("app", &controller);
 
     QObject::connect(

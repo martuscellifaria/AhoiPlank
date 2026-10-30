@@ -1,4 +1,4 @@
-#include "entry_model.h"
+#include "EntryModel.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QProcess>
@@ -90,15 +90,15 @@ double fuzzy_score_multi(const QString& query, const QString& target) {
 
 } // namespace
 
-entry_model::entry_model(QObject* parent) : QAbstractListModel(parent) {
+EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
     load_desktop_files();
 }
 
-int entry_model::rowCount(const QModelIndex&) const {
+int EntryModel::rowCount(const QModelIndex&) const {
     return filtered_.size();
 }
 
-QVariant entry_model::data(const QModelIndex& idx, int role) const {
+QVariant EntryModel::data(const QModelIndex& idx, int role) const {
     if (!idx.isValid() || idx.row() >= filtered_.size()) {
         return {};
     }
@@ -112,7 +112,7 @@ QVariant entry_model::data(const QModelIndex& idx, int role) const {
     return {};
 }
 
-QHash<int, QByteArray> entry_model::roleNames() const {
+QHash<int, QByteArray> EntryModel::roleNames() const {
     return {
         { Qt::UserRole + 1, "name"    },
         { Qt::UserRole + 2, "exec"    },
@@ -121,7 +121,7 @@ QHash<int, QByteArray> entry_model::roleNames() const {
     };
 }
 
-void entry_model::set_filter(const QString& query) {
+void EntryModel::set_filter(const QString& query) {
     beginResetModel();
 
     const QString q = query.trimmed();
@@ -156,7 +156,7 @@ void entry_model::set_filter(const QString& query) {
     endResetModel();
 }
 
-bool entry_model::launch(int row) {
+bool EntryModel::launch(int row) {
     if (row < 0 || row >= filtered_.size()) {
         return false;
     }
@@ -175,11 +175,11 @@ bool entry_model::launch(int row) {
     return ok;
 }
 
-void entry_model::quit() {
+void EntryModel::quit() {
     QCoreApplication::quit();
 }
 
-void entry_model::load_desktop_files() {
+void EntryModel::load_desktop_files() {
     const QStringList dirs = {
         QDir::homePath() + "/.local/share/applications",
         "/usr/local/share/applications",
@@ -222,10 +222,10 @@ void entry_model::load_desktop_files() {
 }
 
 
-icon_provider::icon_provider()
+IconProvider::IconProvider()
     : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
 
-QPixmap icon_provider::requestPixmap(const QString& id, QSize* size,
+QPixmap IconProvider::requestPixmap(const QString& id, QSize* size,
                                      const QSize& requested) {
     const QSize target = requested.isValid() ? requested : QSize(32, 32);
 

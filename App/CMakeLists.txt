@@ -6,7 +6,7 @@ configure_file(
     @ONLY
 )
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Gui Widgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Gui)
 find_package(LayerShellQt REQUIRED)
 qt_standard_project_setup()
 

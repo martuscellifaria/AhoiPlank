@@ -3,7 +3,7 @@ if [ ! -f /.dockerenv ]; then
     exit 1
 fi
 
-for config in "linux-x86_64:toolchain-x86_64-linux.cmake" "linux-arm64:toolchain-aarch64-linux.cmake" "windows-x86_64:toolchain-windows-x86_64.cmake" "windows-arm64:toolchain-windows-arm64.cmake"; do
+for config in "linux-x86_64:toolchain-x86_64-linux.cmake" "linux-arm64:toolchain-aarch64-linux.cmake"; do
     build_dir="${config%%:*}"
     toolchain_file="${config##*:}"
     echo "Building ${build_dir}..."

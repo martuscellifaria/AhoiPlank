@@ -3,5 +3,5 @@ if [ -f /.dockerenv ]; then
     exit 1
 fi
 
-docker build -t devcontainer .
-docker run -it --rm -v $(pwd):/workspace -w /workspace --user $(id -u):$(id -g) devcontainer
+docker build -t ahoiplank-dev .
+docker run -it --rm -v $(pwd):/workspace -w /workspace --user $(id -u):$(id -g) ahoiplank-dev

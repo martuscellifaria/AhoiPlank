@@ -7,15 +7,15 @@
 #include <qhashfunctions.h>
 
 
-class entry_model : public QAbstractListModel {
+class EntryModel : public QAbstractListModel {
     Q_OBJECT
 
 public:
-    explicit entry_model(QObject* parent = nullptr);
+    explicit EntryModel(QObject* parent = nullptr);
 
-    int rowCount(const QModelIndex& parent = {}) const override;
+    int rowCount(const QModelIndex& parent = {}) const override; // Qt base class virtual function, therefore camelCase.
     QVariant data(const QModelIndex& idx, int role) const override;
-    QHash<int, QByteArray> roleNames() const override;
+    QHash<int, QByteArray> roleNames() const override; // same
 
     Q_INVOKABLE void set_filter(const QString& query);
     Q_INVOKABLE bool launch(int row);
@@ -29,18 +29,17 @@ private:
         QString exec;
         QString comment;
         QString icon;
-	QString lower_name;
+        QString lower_name;
     };
 
     QVector<entry> all_;
     QVector<entry> filtered_;
 };
 
-class icon_provider : public QQuickImageProvider {
+class IconProvider : public QQuickImageProvider {
 public:
-    icon_provider();
+    IconProvider();
 
-    QPixmap requestPixmap(const QString& id, QSize* size,
-                          const QSize& requested) override;
+    QPixmap requestPixmap(const QString& id, QSize* size, const QSize& requested) override;
 };
 

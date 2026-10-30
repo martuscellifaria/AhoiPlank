@@ -27,6 +27,7 @@ cmake_install.cmake
 !AhoiCppExternals.cmake
 !AhoiCppProject.cmake
 !AhoiCppSubdirs.cmake
+!cmake/
 
 App/version.h
 App/version.c
