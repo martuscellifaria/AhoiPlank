@@ -1,5 +1,6 @@
 #include "version.h"
 #include "EntryModel.h"
+#include "ThemeConfig.h"
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -42,11 +43,14 @@ int main(int argc, char* argv[]) {
             QCoreApplication::quit();
         });
     });
+
     EntryModel controller;
+    ThemeConfig theme_config;
 
     QQmlApplicationEngine engine;
     engine.addImageProvider("icon", new IconProvider);
     engine.rootContext()->setContextProperty("app", &controller);
+    engine.rootContext()->setContextProperty("theme", &theme_config);
 
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed,
@@ -65,10 +69,10 @@ int main(int argc, char* argv[]) {
             layer->setLayer(LayerShellQt::Window::LayerOverlay);
             layer->setKeyboardInteractivity(
                 LayerShellQt::Window::KeyboardInteractivityExclusive);
-	    layer->setAnchors({ LayerShellQt::Window::AnchorTop });
-	    layer->setMargins(QMargins(0, 120, 0, 0));
+            layer->setAnchors({ LayerShellQt::Window::AnchorTop });
+            layer->setMargins(QMargins(0, 120, 0, 0));
             layer->setExclusiveZone(-1);
-	    layer->setWantsToBeOnActiveScreen(true);
+            layer->setWantsToBeOnActiveScreen(true);
         }
     }
     win->show();

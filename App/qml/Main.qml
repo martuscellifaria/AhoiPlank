@@ -10,13 +10,6 @@ ApplicationWindow {
     color: "transparent"
     title: "launcher"
 
-    readonly property color bg_soft:       "#1f2335"
-    readonly property color fg:            "#c0caf5"
-    readonly property color fg_dim:        "#a9b1d6"
-    readonly property color pastel_blue:   "#7aa2f7"
-    readonly property color pastel_cyan:   "#7dcfff"
-    readonly property color pastel_pink:   "#f7768e"
-
     property bool was_active: false
 
     onActiveChanged: {
@@ -34,9 +27,9 @@ ApplicationWindow {
 
     Rectangle {
         anchors.fill: parent
-        radius: 14
-        color: window.bg_soft
-        border.color: Qt.rgba(0.49, 0.81, 1.0, 0.4)
+        radius: theme.radius_window
+        color: theme.bg
+        border.color: theme.border
         border.width: 1
 
         ColumnLayout {
@@ -44,42 +37,42 @@ ApplicationWindow {
             anchors.margins: 16
             spacing: 12
 
-	    TextField {
-		id: search
-		Layout.fillWidth: true
-		placeholderText: "Search…"
-		font.family: "JetBrains Mono"
-		font.pixelSize: 18
-		color: window.fg
-		background: Rectangle {
-		    radius: 8
-		    color: "#1a1b26"
-		    border.color: Qt.rgba(0.49, 0.81, 1.0, 0.4)
-		}
-		onTextChanged: app.set_filter(text)
+            TextField {
+                id: search
+                Layout.fillWidth: true
+                placeholderText: "Search…"
+                font.family: theme.font_family
+                font.pixelSize: theme.font_size_search
+                color: theme.fg_dim
+                background: Rectangle {
+                    radius: theme.radius_item
+                    color: theme.bg_input
+                    border.color: theme.border
+                }
+                onTextChanged: app.set_filter(text)
 
-		Keys.onDownPressed: {
-		    event.accepted = true
-		    list.incrementCurrentIndex()
-		    list.positionViewAtIndex(list.currentIndex, ListView.Contain)
-		}
-		Keys.onUpPressed: {
-		    event.accepted = true
-		    list.decrementCurrentIndex()
-		    list.positionViewAtIndex(list.currentIndex, ListView.Contain)
-		}
-		Keys.onPressed: (event) => {
-		    if (event.key === Qt.Key_PageDown) {
-			event.accepted = true
-			list.currentIndex = Math.min(list.currentIndex + 5, list.count - 1)
-			list.positionViewAtIndex(list.currentIndex, ListView.Contain)
-		    } else if (event.key === Qt.Key_PageUp) {
-			event.accepted = true
-			list.currentIndex = Math.max(list.currentIndex - 5, 0)
-			list.positionViewAtIndex(list.currentIndex, ListView.Contain)
-		    }
-		}
-	    }
+                Keys.onDownPressed: {
+                    event.accepted = true
+                    list.incrementCurrentIndex()
+                    list.positionViewAtIndex(list.currentIndex, ListView.Contain)
+                }
+                Keys.onUpPressed: {
+                    event.accepted = true
+                    list.decrementCurrentIndex()
+                    list.positionViewAtIndex(list.currentIndex, ListView.Contain)
+                }
+                Keys.onPressed: (event) => {
+                    if (event.key === Qt.Key_PageDown) {
+                        event.accepted = true
+                        list.currentIndex = Math.min(list.currentIndex + 5, list.count - 1)
+                        list.positionViewAtIndex(list.currentIndex, ListView.Contain)
+                    } else if (event.key === Qt.Key_PageUp) {
+                        event.accepted = true
+                        list.currentIndex = Math.max(list.currentIndex - 5, 0)
+                        list.positionViewAtIndex(list.currentIndex, ListView.Contain)
+                    }
+                }
+            }
 
             ListView {
                 id: list
@@ -96,10 +89,8 @@ ApplicationWindow {
 
                     width: list.width
                     height: 44
-                    radius: 8
-                    color: ListView.isCurrentItem
-                           ? Qt.rgba(0.49, 0.81, 1.0, 0.14)
-                           : "transparent"
+                    radius: theme.radius_item
+                    color: ListView.isCurrentItem ? theme.selection : "transparent"
 
                     RowLayout {
                         anchors.fill: parent
@@ -112,16 +103,16 @@ ApplicationWindow {
                             Layout.preferredHeight: 24
                             Layout.alignment: Qt.AlignVCenter
 
-			    Image {
-				anchors.centerIn: parent
-				source: "image://icon/" + parent.parent.parent.icon
-				sourceSize: Qt.size(24, 24)
-				width: 24
-				height: 24
-				fillMode: Image.PreserveAspectFit
-				smooth: true
-				visible: status === Image.Ready
-			    }
+                            Image {
+                                anchors.centerIn: parent
+                                source: "image://icon/" + parent.parent.parent.icon
+                                sourceSize: Qt.size(24, 24)
+                                width: 24
+                                height: 24
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                visible: status === Image.Ready
+                            }
                         }
 
                         ColumnLayout {
@@ -132,17 +123,17 @@ ApplicationWindow {
                             Text {
                                 Layout.fillWidth: true
                                 text: parent.parent.parent.name
-                                color: window.fg
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 14
+                                color: theme.fg
+                                font.family: theme.font_family
+                                font.pixelSize: theme.font_size_title
                                 elide: Text.ElideRight
                             }
                             Text {
                                 Layout.fillWidth: true
                                 text: parent.parent.parent.comment
-                                color: window.fg_dim
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 11
+                                color: theme.fg_dim
+                                font.family: theme.font_family
+                                font.pixelSize: theme.font_size_comment
                                 elide: Text.ElideRight
                                 visible: text.length > 0
                             }

@@ -1,1 +1,2 @@
 add_subdirectory(EntryModel)
+add_subdirectory(ThemeConfig)
