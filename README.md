@@ -3,6 +3,9 @@
 A minimal Wayland application launcher (wofi/rofi - like) built with Qt 6 and QML. Bootstrapped with `AhoiCpp`.
 It contains currently fuzzy search, `.desktop` file parsing, icon theme support, layer-shell overlay and single-instance toggling.
 
+Currently `AhoiPlank` looks like:
+![AhoiPlank window](ahoiplank-window.png)
+
 ## How to build
 
 ### Native build dependencies
@@ -38,6 +41,7 @@ Binaries land in `build/App/AhoiPlank`.
 ## Devcontainer
 
 The devcontainer provides a ready-to-use environment with Qt 6, LayerShellQt, and a C++23 compiler. No host dependencies beyond Docker.
+This is still under construction and may not work right. It compiles, but sometimes has some incompatibilities of .so files. I am working on it.
 
 ### Requirements
 
@@ -79,3 +83,4 @@ sudo cp build/App/AhoiPlank /usr/local/bin/ahoiplank
 ```
 
 Then you will be able to add it to your keybindings on your window manager.
+
