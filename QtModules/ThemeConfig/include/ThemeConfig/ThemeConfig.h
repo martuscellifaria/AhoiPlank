@@ -3,6 +3,7 @@
 #include <QColor>
 #include <QObject>
 #include <QString>
+#include <qtmetamacros.h>
 
 class ThemeConfig : public QObject {
     Q_OBJECT
@@ -26,6 +27,8 @@ class ThemeConfig : public QObject {
     Q_PROPERTY(int screen_width  READ screen_width  NOTIFY changed)
     Q_PROPERTY(int screen_height READ screen_height NOTIFY changed)
 
+    Q_PROPERTY(QString vertical_position READ vertical_position CONSTANT)
+
 public:
     explicit ThemeConfig(QObject *parent = nullptr);
 
@@ -47,6 +50,7 @@ public:
 
     int screen_width()  const { return screen_width_; }
     int screen_height() const { return screen_height_; }
+    QString vertical_position() const { return vertical_position_; }
 
 signals:
     void changed();
@@ -70,4 +74,5 @@ private:
 
     int screen_width_  { 640 };
     int screen_height_ { 420 };
+    QString vertical_position_ = "center";
 };

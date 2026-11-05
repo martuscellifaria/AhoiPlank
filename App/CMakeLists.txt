@@ -6,7 +6,7 @@ configure_file(
     @ONLY
 )
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Gui)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Gui QuickControls2)
 find_package(LayerShellQt REQUIRED)
 qt_standard_project_setup()
 
@@ -43,6 +43,7 @@ target_link_libraries(ahoicpp_externals_interface INTERFACE ${AHOICPP_EXTERNALS_
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ahoicpp_externals_interface
     Qt6::Quick
+    Qt6::QuickControls2
     Qt6::Gui
     LayerShellQt::Interface
 )

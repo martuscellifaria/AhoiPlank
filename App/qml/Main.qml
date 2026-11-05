@@ -1,26 +1,27 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 
-ApplicationWindow {
+Window {
     id: window
-    width: 640
-    height: 420
+    width: theme.screen_width
+    height: theme.screen_height
     flags: Qt.FramelessWindowHint
     color: "transparent"
     title: "launcher"
+    visible: false
 
     property bool was_active: false
 
     onActiveChanged: {
         if (active) {
             was_active = true
-        } else if (was_active) {
-            app.quit()
+        } else if (was_active && visible) {
+            was_active = false
+            app.dismiss()
         }
     }
 
-    Shortcut { sequence: "Esc";    onActivated: app.quit() }
+    Shortcut { sequence: "Esc";    onActivated: app.dismiss() }
     Shortcut { sequence: "Return"; onActivated: app.launch(list.currentIndex) }
 
     Component.onCompleted: search.forceActiveFocus()
@@ -37,39 +38,60 @@ ApplicationWindow {
             anchors.margins: 16
             spacing: 12
 
-            TextField {
-                id: search
+            Rectangle {
+                id: search_bg
                 Layout.fillWidth: true
-                placeholderText: "Search…"
-                font.family: theme.font_family
-                font.pixelSize: theme.font_size_search
-                color: theme.fg_dim
-                background: Rectangle {
-                    radius: theme.radius_item
-                    color: theme.bg_input
-                    border.color: theme.border
-                }
-                onTextChanged: app.set_filter(text)
+                implicitHeight: search.implicitHeight + 16
+                radius: theme.radius_item
+                color: theme.bg_input
+                border.color: theme.border
+                border.width: 1
 
-                Keys.onDownPressed: {
-                    event.accepted = true
-                    list.incrementCurrentIndex()
-                    list.positionViewAtIndex(list.currentIndex, ListView.Contain)
-                }
-                Keys.onUpPressed: {
-                    event.accepted = true
-                    list.decrementCurrentIndex()
-                    list.positionViewAtIndex(list.currentIndex, ListView.Contain)
-                }
-                Keys.onPressed: (event) => {
-                    if (event.key === Qt.Key_PageDown) {
+                TextInput {
+                    id: search
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    verticalAlignment: TextInput.AlignVCenter
+                    color: theme.fg_dim
+                    font.family: theme.font_family
+                    font.pixelSize: theme.font_size_search
+                    clip: true
+                    selectByMouse: true
+                    onTextChanged: app.set_filter(text)
+
+                    Text {
+                        anchors.fill: parent
+                        verticalAlignment: Text.AlignVCenter
+                        text: "Search…"
+                        color: theme.fg_dim
+                        opacity: 0.5
+                        font: search.font
+                        visible: search.text.length === 0
+                    }
+                    Keys.onDownPressed: (event) => {
                         event.accepted = true
-                        list.currentIndex = Math.min(list.currentIndex + 5, list.count - 1)
+                        if (list.count === 0) return
+                        list.incrementCurrentIndex()
                         list.positionViewAtIndex(list.currentIndex, ListView.Contain)
-                    } else if (event.key === Qt.Key_PageUp) {
+                    }
+                    Keys.onUpPressed: (event) => {
                         event.accepted = true
-                        list.currentIndex = Math.max(list.currentIndex - 5, 0)
+                        if (list.count === 0) return
+                        list.decrementCurrentIndex()
                         list.positionViewAtIndex(list.currentIndex, ListView.Contain)
+                    }
+                    Keys.onPressed: (event) => {
+                        if (event.key === Qt.Key_PageDown) {
+                            event.accepted = true
+                            if (list.count === 0) return
+                            list.currentIndex = Math.min(list.currentIndex + 5, list.count - 1)
+                            list.positionViewAtIndex(list.currentIndex, ListView.Contain)
+                        } else if (event.key === Qt.Key_PageUp) {
+                            event.accepted = true
+                            if (list.count === 0) return
+                            list.currentIndex = Math.max(list.currentIndex - 5, 0)
+                            list.positionViewAtIndex(list.currentIndex, ListView.Contain)
+                        }
                     }
                 }
             }
@@ -105,7 +127,7 @@ ApplicationWindow {
 
                             Image {
                                 anchors.centerIn: parent
-                                source: "image://icon/" + parent.parent.parent.icon
+                                source: icon.length > 0 ? "image://icon/" + icon : ""
                                 sourceSize: Qt.size(24, 24)
                                 width: 24
                                 height: 24

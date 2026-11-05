@@ -9,12 +9,35 @@
 
 namespace {
 
+QColor parse_color(const QString &s) {
+    QString str = s.trimmed();
+    if (str.startsWith('#')) {
+        str = str.mid(1);
+    }
+
+    if (str.length() == 8) {
+        bool ok = false;
+        const uint rgba = str.toUInt(&ok, 16);
+        if (ok) {
+            return QColor(
+                static_cast<int>((rgba >> 24) & 0xFFu),
+                static_cast<int>((rgba >> 16) & 0xFFu),
+                static_cast<int>((rgba >> 8)  & 0xFFu),
+                static_cast<int>( rgba        & 0xFFu)
+            );
+        }
+        return QColor();
+    }
+
+    return QColor(str.isEmpty() ? s : "#" + str);
+}
+
 QColor color_or(const QJsonObject &obj, const char *key, const QColor &fallback) {
     const QString s = obj.value(QLatin1String(key)).toString();
     if (s.isEmpty()) {
         return fallback;
     }
-    const QColor c(s);
+    const QColor c = parse_color(s);
     if (!c.isValid()) {
         return fallback;
     }
@@ -75,4 +98,12 @@ ThemeConfig::ThemeConfig(QObject *parent) : QObject(parent) {
 
     screen_width_  = int_or(root, "screen_width",  screen_width_);
     screen_height_ = int_or(root, "screen_height", screen_height_);
+
+    const QJsonValue vp = root.value("vertical_position");
+    if (vp.isString()) {
+        vertical_position_ = vp.toString();
+    }
+    else if (vp.isDouble()) {
+        vertical_position_ = QString::number(vp.toInt());
+    }
 }
