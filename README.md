@@ -2,6 +2,7 @@
 
 A minimal Wayland application launcher (wofi/rofi - like) built with Qt 6 and QML. Bootstrapped with `AhoiCpp`.
 It contains currently fuzzy search, `.desktop` file parsing, icon theme support, layer-shell overlay and single-instance toggling.
+You can run `ahoiplank` daemon on the background to make the interaction snappier.
 
 Currently `AhoiPlank` looks like:
 ![AhoiPlank window](ahoiplank-window.png)
@@ -76,11 +77,68 @@ cd build/App
 ./AhoiPlank
 ```
 
-If it works correctly, you can later on install on your system:
+A vertical list of applications will popup and you can fuzzy find and start your on the current workspace you are into.
+
+## Customizing
+
+Of course, since we are on Linux and using tiling window managers, the next step is having `dotfiles`.
+If you create `config.json` inside `~/.config/ahoiplank/`, you can start tinkering with it.
+This is also under development, how extensible it will be. My first config file looks like:
+
+```json
+{
+  "screen_width": 640,
+  "screen_height": 420,
+  "vertical_position": "center",
+
+  "radius_window": 14,
+  "radius_item": 8,
+
+  "font_family": "monospace",
+  "font_size_search": 18,
+  "font_size_title": 14,
+  "font_size_comment": 11,
+
+  "colors": {
+    "bg":        "#1f2335",
+    "bg_input":  "#1a1b26",
+    "fg":        "#c0caf5",
+    "fg_dim":    "#a9b1d6",
+    "border":    "#7dcfff66",
+    "selection": "#7dcfff24",
+    "accent":    "#f7768e"
+  }
+}
+```
+
+## Installing on your system
+
+You have probably already compiled, so the next steps are: 
 
 ```bash
 sudo cp build/App/AhoiPlank /usr/local/bin/ahoiplank
 ```
 
-Then you will be able to add it to your keybindings on your window manager.
+Then you will be able to run it with `ahoiplank` from your terminal or add it to your keybindings on your window manager.
 
+## Running the daemon on background
+
+You are also able to run `ahoiplank` on the background by starting with:
+
+```bash
+ahoiplank --start-daemon
+```
+
+For stopping it:
+
+```bash
+ahoiplank --stop-daemon
+```
+
+These two commands are great for applying to startup and shutdown from your tiling window manager. This makes the keybinding to lauch `ahoiplank` as snappier as it can get.
+
+Another flag you can run is of course:
+
+```bash
+ahoiplank --version
+```

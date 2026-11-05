@@ -4,69 +4,72 @@
 #include <QProcess>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QFileInfo>
 #include <QIcon>
 #include <QPixmap>
 #include <algorithm>
 
 namespace {
 
-double fuzzy_score(const QString& q, const QString& s) {
-    if (q.isEmpty()) {
+double fuzzy_score(const QString& term, const QString& target) {
+    if (term.isEmpty()) {
         return 0.0;
     }
-    if (s.isEmpty()) {
+    if (target.isEmpty()) {
         return -1e9;
     }
 
-    const int qn = q.size();
-    const int sn = s.size();
+    const int term_size = static_cast<int>(term.size());
+    const int target_size = static_cast<int>(target.size());
 
     double score = 0.0;
-    int qi = 0;
+    int term_index = 0;
     int last_match = -2;
     int consecutive = 0;
 
-    for (int si = 0; si < sn && qi < qn; ++si) {
-        const QChar sc = s.at(si);
-        const QChar qc = q.at(qi);
+    for (int target_index = 0; target_index < target_size && term_index < term_size; ++target_index) {
+        const QChar target_char = target.at(target_index);
+        const QChar term_char = term.at(term_index);
 
-        if (sc.toLower() != qc.toLower()) {
+        if (target_char.toLower() != term_char.toLower()) {
             continue;
         }
 
         double char_score = 0.0;
 
-        if (si == 0) {
+        if (target_index == 0) {
             char_score += 2.0;
-        } else if (s.at(si - 1) == ' ' || s.at(si - 1) == '-'
-                   || s.at(si - 1) == '_' || s.at(si - 1) == '.'
-                   || s.at(si - 1) == '/') {
-            char_score += 1.0;
-        } else if (s.at(si - 1).isLower() && sc.isUpper()) {
+        }
+        else if ((target.at(target_index -1) == ' '
+                    || target.at(target_index -1) == '-'
+                    || target.at(target_index -1) == '_'
+                    || target.at(target_index -1) == '.'
+                    || target.at(target_index -1) == '/')
+                ||(target.at(target_index -1).isLower() && target_char.isUpper())) {
             char_score += 1.0;
         }
 
-        if (last_match == si - 1) {
+        if (last_match == target_index -1) {
             consecutive += 1;
             char_score += 1.0 + consecutive * 0.5;
         } else {
             consecutive = 0;
             if (last_match >= 0) {
-                const int gap = si - last_match - 1;
+                const int gap = target_index - last_match - 1;
                 char_score -= gap * 0.5;
             }
         }
 
         score += char_score;
-        last_match = si;
-        ++qi;
+        last_match = target_index;
+        ++term_index;
     }
 
-    if (qi < qn) {
+    if (term_index < term_size) {
         return -1e9;
     }
 
-    score -= static_cast<double>(sn) * 0.01;
+    score -= static_cast<double>(target_size) * 0.01;
 
     return score;
 }
@@ -95,7 +98,7 @@ EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
 }
 
 int EntryModel::rowCount(const QModelIndex&) const {
-    return filtered_.size();
+    return static_cast<int>(filtered_.size());
 }
 
 QVariant EntryModel::data(const QModelIndex& idx, int role) const {
@@ -108,6 +111,7 @@ QVariant EntryModel::data(const QModelIndex& idx, int role) const {
         case Qt::UserRole + 2: return e.exec;
         case Qt::UserRole + 3: return e.comment;
         case Qt::UserRole + 4: return e.icon;
+        default: break;
     }
     return {};
 }
@@ -170,13 +174,17 @@ bool EntryModel::launch(int row) {
     }
     const bool ok = QProcess::startDetached(argv.takeFirst(), argv);
     if (ok) {
-        QCoreApplication::quit();
+        emit dismissed();
     }
     return ok;
 }
 
 void EntryModel::quit() {
     QCoreApplication::quit();
+}
+
+void EntryModel::dismiss() {
+    emit dismissed();
 }
 
 void EntryModel::load_desktop_files() {
@@ -188,56 +196,135 @@ void EntryModel::load_desktop_files() {
 
     for (const auto& dir : dirs) {
         QDir d(dir);
-        if (!d.exists()) {
-            continue;
-        }
-
+        if (!d.exists()) { continue; }
         const auto files = d.entryList({ "*.desktop" }, QDir::Files);
         for (const auto& file : files) {
-            QSettings s(d.filePath(file), QSettings::IniFormat);
-            s.beginGroup("Desktop Entry");
-
-            if (s.value("Type").toString() != "Application"
-                || s.value("NoDisplay", false).toBool()
-                || s.value("Hidden", false).toBool()) {
-                s.endGroup();
-                continue;
+            Entry e;
+            if (parse_desktop(d.filePath(file), e)) {
+                all_.append(e);
             }
-
-	    entry e;
-            e.name = s.value("Name").toString();
-            e.exec = s.value("Exec").toString();
-            e.comment = s.value("Comment").toString();
-            e.icon = s.value("Icon").toString();
-            e.lower_name = e.name.toLower();
-            all_.append(e);
-            s.endGroup();
         }
     }
 
     std::sort(all_.begin(), all_.end(),
-              [](const entry& a, const entry& b) { return a.name < b.name; });
+              [](const Entry& a, const Entry& b) { return a.name < b.name; });
 
-    set_filter("");
+    filtered_ = all_;
 }
 
+bool EntryModel::parse_desktop(const QString& path, Entry& out) {
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) { return false; }
 
-IconProvider::IconProvider()
-    : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
+    bool in_desktop_entry = false;
+    bool is_application = false;
+    bool no_display = false;
+    bool hidden = false;
+    QString name, exec, comment, icon;
 
-QPixmap IconProvider::requestPixmap(const QString& id, QSize* size,
-                                     const QSize& requested) {
-    const QSize target = requested.isValid() ? requested : QSize(32, 32);
+    while (!f.atEnd()) {
+        const QByteArray line = f.readLine();
+        if (line.isEmpty()) { continue; }
 
-    QIcon icon = QIcon::fromTheme(id);
+        if (line.startsWith('[')) {
+            in_desktop_entry = (line.trimmed() == "[Desktop Entry]");
+            if (!in_desktop_entry && is_application) { break; }
+            continue;
+        }
+        if (!in_desktop_entry) { continue; }
 
-    if (icon.isNull()) {
-        icon = QIcon::fromTheme("application-x-executable");
+        int eq = static_cast<int>(line.indexOf('='));
+        if (eq <= 0) { continue; }
+        const QByteArray key = line.left(eq).trimmed();
+        QByteArray value = line.mid(eq + 1);
+        while (value.endsWith('\n') || value.endsWith('\r')) { value.chop(1); }
+
+        if (key == "Type") {
+            is_application = (value == "Application");
+        }
+        else if (key == "NoDisplay") {
+            no_display = (value == "true");
+        }
+        else if (key == "Hidden") {
+            hidden = (value == "true");
+        }
+        else if (key == "Name") {
+            name = QString::fromUtf8(value);
+        }
+        else if (key == "Exec") {
+            exec = QString::fromUtf8(value);
+        }
+        else if (key == "Comment") {
+            comment = QString::fromUtf8(value);
+        }
+        else if (key == "Icon") {
+            icon = QString::fromUtf8(value);
+        }
     }
 
-    QPixmap pm = icon.pixmap(target);
+    if (!is_application || no_display || hidden || name.isEmpty()) { return false; }
+
+    out.lower_name = name.toLower();
+    out.name = std::move(name);
+    out.exec = std::move(exec);
+    out.comment = std::move(comment);
+    out.icon = std::move(icon);
+    return true;
+}
+
+IconProvider::IconProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {
+    static const char* const names[] = {
+        "application-x-executable",
+        "application-x-executable-symbolic",
+        "application-x-application",
+        "application-default-icon",
+        "exec",
+        nullptr,
+    };
+    for (const char* const* n = names; *n; ++n) {
+        QIcon i = QIcon::fromTheme(*n);
+        if (!i.isNull()) {
+            fallback_icon_ = i.pixmap(QSize(24, 24));
+            break;
+        }
+    }
+    if (fallback_icon_.isNull()) {
+        fallback_icon_ = QPixmap(24, 24);
+        fallback_icon_.fill(Qt::transparent);
+    }
+}
+
+QPixmap IconProvider::requestPixmap(const QString& id, QSize* size, const QSize& requested) {
+    const QSize target = requested.isValid() ? requested : QSize(32, 32);
+    const QString key = id + '@' + QString::number(target.width()) + 'x' + QString::number(target.height());
+
+    if (auto it = cache_.find(key); it != cache_.end()) {
+        if (size) {
+            *size = it->size();
+        }
+        return *it;
+    }
+
+    QIcon icon;
+    if (id.startsWith('/')) {
+        if (QFileInfo::exists(id)) {
+            icon = QIcon(id);
+        }
+    } else if (!id.isEmpty()) {
+        icon = QIcon::fromTheme(id);
+    }
+
+    QPixmap pm;
+    if (!icon.isNull()) {
+        pm = icon.pixmap(target);
+    }
+    if (pm.isNull()) {
+        pm = fallback_icon_.scaled(target, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+
     if (size) {
         *size = pm.size();
     }
+    cache_.insert(key, pm);
     return pm;
 }
