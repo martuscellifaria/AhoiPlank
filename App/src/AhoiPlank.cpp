@@ -14,25 +14,60 @@
 #include <QDebug>
 #include <QQuickWindow>
 #include <QQuickStyle>
+#include <QFile>
+#include <QDir>
+#include <QStandardPaths>
 #include <LayerShellQt/Window>
 #include <LayerShellQt/Shell>
 #include <print>
 #include <sys/file.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
+#include <cstring>
 
 extern const char* embedded_version;
 
 
 static const char* kSocketName = "ahoiplank-socket";
 
-static bool try_send_command(const char* cmd) {
-    QLocalSocket sock;
-    sock.connectToServer(kSocketName);
-    if (!sock.waitForConnected(500)) {
+static QString socket_path() {
+    const QString runtime = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);
+    return QDir(runtime).filePath(kSocketName);
+}
+
+static bool try_send_raw(const char* cmd) {
+    const QString path = socket_path();
+    if (path.isEmpty()) {
         return false;
     }
-    sock.write(cmd);
-    sock.waitForBytesWritten(500);
+
+    const int fd = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    if (fd < 0) {
+        return false;
+    }
+
+    sockaddr_un addr{};
+    addr.sun_family = AF_UNIX;
+    const QByteArray path_bytes = path.toLocal8Bit();
+    if (path_bytes.size() + 1 > static_cast<int>(sizeof(addr.sun_path))) {
+        ::close(fd);
+        return false;
+    }
+    std::strncpy(addr.sun_path, path_bytes.constData(), sizeof(addr.sun_path) - 1);
+
+    if (::connect(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
+        ::close(fd);
+        return false;
+    }
+
+    const size_t len = std::strlen(cmd);
+    if (::write(fd, cmd, len) != static_cast<ssize_t>(len)) {
+        ::close(fd);
+        return false;
+    }
+
+    ::close(fd);
     return true;
 }
 
@@ -56,26 +91,40 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    QGuiApplication app(argc, argv);
-    app.setQuitOnLastWindowClosed(false);
-    QQuickStyle::setStyle("Basic");
-
     if (daemon_stop) {
-        try_send_command("quit");
+        try_send_raw("quit");
         return 0;
     }
 
     if (daemon_start) {
-        if (try_send_command("ping")) {
+        if (try_send_raw("ping")) {
             return 0;
         }
     }
     else {
-        if (try_send_command("toggle")) {
+        if (try_send_raw("toggle")) {
             return 0;
         }
         cold_show = true;
     }
+
+    if (qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")) {
+        std::println(stderr, "AhoiPlank: no Wayland display (WAYLAND_DISPLAY is not set)");
+        return 1;
+    }
+
+    const QString wl_socket = QDir(qEnvironmentVariable("XDG_RUNTIME_DIR"))
+                                  .filePath(qEnvironmentVariable("WAYLAND_DISPLAY"));
+    if (!QFile::exists(wl_socket)) {
+        std::println(stderr, "AhoiPlank: WAYLAND_DISPLAY={} but {} does not exist",
+                     qEnvironmentVariable("WAYLAND_DISPLAY").toStdString(),
+                     wl_socket.toStdString());
+        return 1;
+    }
+
+    QGuiApplication app(argc, argv);
+    app.setQuitOnLastWindowClosed(false);
+    QQuickStyle::setStyle("Basic");
 
     QLocalServer::removeServer(kSocketName);
     QLocalServer server;
