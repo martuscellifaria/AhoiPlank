@@ -6,7 +6,7 @@
   "radius_window": 14,
   "radius_item": 8,
 
-  "font_family": "Iosevka Nerd Font Mono",
+  "font_family": "monospace",
   "font_size_search": 18,
   "font_size_title": 14,
   "font_size_comment": 11,
