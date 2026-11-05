@@ -108,7 +108,8 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    if (auto* layer = LayerShellQt::Window::get(win)) {
+    LayerShellQt::Window* layer = LayerShellQt::Window::get(win);
+    if (layer) {
         layer->setScope("AhoiPlank");
         layer->setLayer(LayerShellQt::Window::LayerOverlay);
         layer->setKeyboardInteractivity(
@@ -116,40 +117,47 @@ int main(int argc, char* argv[]) {
         layer->setAnchors({ LayerShellQt::Window::AnchorTop });
         layer->setExclusiveZone(-1);
         layer->setWantsToBeOnActiveScreen(true);
-
-        QTimer::singleShot(0, win, [win, layer, &theme_config]() {
-            const QScreen* scr = win->screen();
-            if (!scr) {
-                scr = QGuiApplication::primaryScreen();
-            }
-            const int screen_h = scr ? scr->geometry().height() : 0;
-            const int win_h = theme_config.screen_height();
-
-            const QString pos = theme_config.vertical_position();
-            bool is_number = false;
-            const int as_int = pos.toInt(&is_number);
-
-            int margin_top = 0;
-            if (is_number) {
-                margin_top = qMax(0, as_int);
-            }
-            else if (pos == "top") {
-                margin_top = 0;
-            }
-            else if (pos == "bottom") {
-                margin_top = qMax(0, screen_h - win_h);
-            }
-            else {
-                margin_top = qMax(0, (screen_h - win_h) / 2);
-            }
-
-            layer->setMargins(QMargins(0, margin_top, 0, 0));
-        });
     }
+
+    auto apply_margins = [&]() {
+        if (!layer) {
+            return;
+        }
+        const QScreen* scr = win->screen();
+        if (!scr) {
+            scr = QGuiApplication::primaryScreen();
+        }
+        const int screen_h = scr ? scr->geometry().height() : 0;
+        const int win_h = theme_config.screen_height();
+
+        const QString pos = theme_config.vertical_position();
+        bool is_number = false;
+        const int as_int = pos.toInt(&is_number);
+
+        int margin_top = 0;
+        if (is_number) {
+            margin_top = qMax(0, as_int);
+        }
+        else if (pos == "top") {
+            margin_top = 0;
+        }
+        else if (pos == "bottom") {
+            margin_top = qMax(0, screen_h - win_h);
+        }
+        else {
+            margin_top = qMax(0, (screen_h - win_h) / 2);
+        }
+
+        layer->setMargins(QMargins(0, margin_top, 0, 0));
+    };
+
+    QTimer::singleShot(0, win, apply_margins);
 
     auto toggle = [&]() {
         const bool show = !win->isVisible();
         if (show) {
+            theme_config.reload();
+            apply_margins();
             controller.set_filter(QStringLiteral(""));
             win->show();
             win->requestActivate();

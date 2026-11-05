@@ -68,42 +68,84 @@ QString config_path() {
 } // namespace
 
 ThemeConfig::ThemeConfig(QObject *parent) : QObject(parent) {
+    reload();
+}
+
+void ThemeConfig::reload() {
+    QColor bg         { QStringLiteral("#1f2335") };
+    QColor bg_input   { QStringLiteral("#1a1b26") };
+    QColor fg         { QStringLiteral("#c0caf5") };
+    QColor fg_dim     { QStringLiteral("#a9b1d6") };
+    QColor border     { QStringLiteral("#7dcfff66") };
+    QColor selection  { QStringLiteral("#7aa2f724") };
+    QColor accent     { QStringLiteral("#f7768e") };
+
+    QString font_family       { QStringLiteral("monospace") };
+    int     font_size_search  { 18 };
+    int     font_size_title   { 14 };
+    int     font_size_comment { 11 };
+
+    int radius_window { 14 };
+    int radius_item   { 8 };
+
+    int screen_width  { 640 };
+    int screen_height { 420 };
+    QString vertical_position = "center";
+
     QFile f(config_path());
-    if (!f.open(QIODevice::ReadOnly)) {
-        return;
+    if (f.open(QIODevice::ReadOnly)) {
+        const QJsonObject root = QJsonDocument::fromJson(f.readAll()).object();
+        if (!root.isEmpty()) {
+            const QJsonObject colors = root.value("colors").toObject();
+
+            bg        = color_or(colors, "bg",        bg);
+            bg_input  = color_or(colors, "bg_input",  bg_input);
+            fg        = color_or(colors, "fg",        fg);
+            fg_dim    = color_or(colors, "fg_dim",    fg_dim);
+            border    = color_or(colors, "border",    border);
+            selection = color_or(colors, "selection", selection);
+            accent    = color_or(colors, "accent",    accent);
+
+            font_family       = string_or(root, "font_family",       font_family);
+            font_size_search  = int_or(root, "font_size_search",     font_size_search);
+            font_size_title   = int_or(root, "font_size_title",      font_size_title);
+            font_size_comment = int_or(root, "font_size_comment",    font_size_comment);
+
+            radius_window = int_or(root, "radius_window", radius_window);
+            radius_item   = int_or(root, "radius_item",   radius_item);
+
+            screen_width  = int_or(root, "screen_width",  screen_width);
+            screen_height = int_or(root, "screen_height", screen_height);
+
+            const QJsonValue vp = root.value("vertical_position");
+            if (vp.isString()) {
+                vertical_position = vp.toString();
+            }
+            else if (vp.isDouble()) {
+                vertical_position = QString::number(vp.toInt());
+            }
+        }
     }
 
-    const QJsonObject root = QJsonDocument::fromJson(f.readAll()).object();
-    if (root.isEmpty()) {
-        return;
-    }
+    bg_        = bg;
+    bg_input_  = bg_input;
+    fg_        = fg;
+    fg_dim_    = fg_dim;
+    border_    = border;
+    selection_ = selection;
+    accent_    = accent;
 
-    const QJsonObject colors = root.value("colors").toObject();
+    font_family_       = font_family;
+    font_size_search_  = font_size_search;
+    font_size_title_   = font_size_title;
+    font_size_comment_ = font_size_comment;
 
-    bg_        = color_or(colors, "bg",        bg_);
-    bg_input_  = color_or(colors, "bg_input",  bg_input_);
-    fg_        = color_or(colors, "fg",        fg_);
-    fg_dim_    = color_or(colors, "fg_dim",    fg_dim_);
-    border_    = color_or(colors, "border",    border_);
-    selection_ = color_or(colors, "selection", selection_);
-    accent_    = color_or(colors, "accent",    accent_);
+    radius_window_ = radius_window;
+    radius_item_   = radius_item;
 
-    font_family_       = string_or(root, "font_family",       font_family_);
-    font_size_search_  = int_or(root, "font_size_search",     font_size_search_);
-    font_size_title_   = int_or(root, "font_size_title",      font_size_title_);
-    font_size_comment_ = int_or(root, "font_size_comment",    font_size_comment_);
+    screen_width_  = screen_width;
+    screen_height_ = screen_height;
+    vertical_position_ = vertical_position;
 
-    radius_window_ = int_or(root, "radius_window", radius_window_);
-    radius_item_   = int_or(root, "radius_item",   radius_item_);
-
-    screen_width_  = int_or(root, "screen_width",  screen_width_);
-    screen_height_ = int_or(root, "screen_height", screen_height_);
-
-    const QJsonValue vp = root.value("vertical_position");
-    if (vp.isString()) {
-        vertical_position_ = vp.toString();
-    }
-    else if (vp.isDouble()) {
-        vertical_position_ = QString::number(vp.toInt());
-    }
+    emit changed();
 }

@@ -1,0 +1,23 @@
+{
+  "screen_width": 640,
+  "screen_height": 420,
+  "vertical_position": "center",
+
+  "radius_window": 14,
+  "radius_item": 8,
+
+  "font_family": "Iosevka Nerd Font Mono",
+  "font_size_search": 18,
+  "font_size_title": 14,
+  "font_size_comment": 11,
+
+  "colors": {
+    "bg":        "#1f2335",
+    "bg_input":  "#1a1b26",
+    "fg":        "#c0caf5",
+    "fg_dim":    "#a9b1d6",
+    "border":    "#7dcfff66",
+    "selection": "#7dcfff24",
+    "accent":    "#f7768e"
+  }
+}
