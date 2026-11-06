@@ -1,11 +1,13 @@
 # AhoiPlank
 
-A minimal Wayland application launcher (wofi/rofi - like) built with Qt 6 and QML. Bootstrapped with `AhoiCpp`.
+A minimal Wayland application launcher (wofi/rofi - like) built with Qt 6 and QML, bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
 It contains currently fuzzy search, `.desktop` file parsing, icon theme support, layer-shell overlay and single-instance toggling.
 You can run `ahoiplank` daemon on the background to make the interaction snappier.
 
 Currently `AhoiPlank` looks like:
 ![AhoiPlank window](ahoiplank-window.png)
+
+Currently tested on `sway` and `hyprland`, but should work on other Wayland wms as well.
 
 ## How to build
 
@@ -135,10 +137,14 @@ For stopping it:
 ahoiplank --stop-daemon
 ```
 
-These two commands are great for applying to startup and shutdown from your tiling window manager. This makes the keybinding to lauch `ahoiplank` as snappier as it can get.
+These two commands are great for applying to startup and shutdown from your tiling window manager.
 
-Another flag you can run is of course:
+Another flags you can run are:
 
 ```bash
 ahoiplank --version
+```
+
+```bash
+ahoiplank --help
 ```
