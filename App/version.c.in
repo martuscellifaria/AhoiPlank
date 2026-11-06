@@ -2,4 +2,4 @@ const char* embedded_version =
     "@PROJECT_NAME@ version: @VERSION@\n"
     "Build type: @CMAKE_BUILD_TYPE@\n"
     "Copyright: @COPYRIGHT@\n"
-    "Company: @COMPANY@\n";
+    "Company: @COMPANY@";
