@@ -1,6 +1,8 @@
 #include "version.h"
 #include "EntryModel.h"
 #include "ThemeConfig.h"
+#include <QFile>
+#include <QDir>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -18,16 +20,16 @@
 #include <LayerShellQt/Shell>
 #include <print>
 #include <sys/file.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 extern const char* embedded_version;
-
-
-static const char* kSocketName = "ahoiplank-socket";
+static const char* k_socket_name = "ahoiplank-socket";
 
 static bool try_send_command(const char* cmd) {
     QLocalSocket sock;
-    sock.connectToServer(kSocketName);
+    sock.connectToServer(k_socket_name);
     if (!sock.waitForConnected(500)) {
         return false;
     }
@@ -41,24 +43,33 @@ int main(int argc, char* argv[]) {
     bool daemon_start = false;
     bool daemon_stop = false;
     bool cold_show = false;
-
-    for (int i = 1; i < argc; ++i) {
-        const QString arg = QString::fromLocal8Bit(argv[i]);
+    if (argc > 1) { 
+        const QString arg = QString::fromLocal8Bit(argv[1]);
         if (arg == "--version") {
             std::println("{}", embedded_version);
             return 0;
         }
-        else if (arg == "--daemon-start") {
-            daemon_start = true;
+        else if (arg == "--help") {
+            std::println("AhoiPlank is a customizable launcher for Wayland.\n\n"
+                    "Usage: ahoiplank [OPTIONAL ARGUMENT], "
+                    "where [OPTIONAL ARGUMENT] is one among the following:\n"
+                    "    --daemon-start\n"
+                    "\tStarts AhoiPlank daemon in background to better user feel.\n"
+                    "    --daemon-stop\n"
+                    "\tStops AhoiPlank daemon.\n"
+                    "    --version\n"
+                    "\tShows version metadata.\n"
+                    "    --help\n"
+                    "\tShows this helper.");
+            return 0;
         }
         else if (arg == "--daemon-stop") {
             daemon_stop = true;
         }
+        else if (arg == "--daemon-start") {
+            daemon_start = true;
+        }
     }
-
-    QGuiApplication app(argc, argv);
-    app.setQuitOnLastWindowClosed(false);
-    QQuickStyle::setStyle("Basic");
 
     if (daemon_stop) {
         try_send_command("quit");
@@ -77,10 +88,51 @@ int main(int argc, char* argv[]) {
         cold_show = true;
     }
 
-    QLocalServer::removeServer(kSocketName);
+    const QString wl_display = qEnvironmentVariable("WAYLAND_DISPLAY");
+    const QString runtime_dir = qEnvironmentVariable("XDG_RUNTIME_DIR");
+
+    if (wl_display.isEmpty() || runtime_dir.isEmpty()) {
+        std::println(stderr, "AhoiPlank: WAYLAND_DISPLAY "
+                "or XDG_RUNTIME_DIR not set.");
+        return 1;
+    }
+
+    const QString wl_socket = QDir(runtime_dir).filePath(wl_display);
+    if (!QFile::exists(wl_socket)) {
+        std::println(stderr, "AhoiPlank: no Wayland socket at {}. "
+                "Please make sure you are on Wayland.", wl_socket.toStdString());
+        return 1;
+    }
+
+    const pid_t pid = ::fork();
+    if (pid < 0) {
+        std::println(stderr, "AhoiPlank: fork failed.");
+        return 1;
+    }
+    if (pid > 0) {
+        ::_exit(0);
+    }
+
+    ::setsid();
+
+    const int devnull = ::open("/dev/null", O_RDWR);
+    if (devnull >= 0) {
+        ::dup2(devnull, STDIN_FILENO);
+        ::dup2(devnull, STDOUT_FILENO);
+        ::dup2(devnull, STDERR_FILENO);
+        if (devnull > STDERR_FILENO) {
+            ::close(devnull);
+        }
+    }
+
+    QGuiApplication app(argc, argv);
+    app.setQuitOnLastWindowClosed(false);
+    QQuickStyle::setStyle("Basic");
+
+    QLocalServer::removeServer(k_socket_name);
     QLocalServer server;
-    if (!server.listen(kSocketName)) {
-        qWarning() << "could not listen on" << kSocketName << ":" << server.errorString();
+    if (!server.listen(k_socket_name)) {
+        qWarning() << "could not listen on" << k_socket_name << ":" << server.errorString();
         return -1;
     }
 
