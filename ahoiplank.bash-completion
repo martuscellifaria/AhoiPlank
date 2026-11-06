@@ -1,0 +1,16 @@
+# ahoiplank.bash-completion
+_ahoiplank() {
+    local cur prev
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+
+    case $prev in
+        --daemon-start) _filedir conf; return ;;
+        --daemon-stop)  COMPREPLY=( $(compgen -W "$(pgrep -x ahoiplank)" -- "$cur") ); return ;;
+    esac
+
+    if [[ $cur == -* ]]; then
+        COMPREPLY=( $(compgen -W "--version --daemon-start --daemon-stop --help" -- "$cur") )
+    fi
+}
+complete -F _ahoiplank ahoiplank
