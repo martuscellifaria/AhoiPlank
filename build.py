@@ -86,11 +86,11 @@ if __name__ == '__main__':
 
         match(build_selection):
             case "":
-                run_app("Release", "")
+                run_app("Release", "99.99.99", "AhoiTools")
             case "0":
                 print("You selected Release. Please add a version to your build. Format recommended: XX.XX.XX. Hint: you can just press enter and leave it empty.")
                 version = input()
-                run_app("Release", version)
+                run_app("Release", version, "AhoiTools")
             case "1":
                 print("Build as Debug")
                 run_app("RelWithDebInfo", "")
