@@ -123,6 +123,33 @@ sudo cp build/App/AhoiPlank /usr/local/bin/ahoiplank
 
 Then you will be able to run it with `ahoiplank` from your terminal or add it to your keybindings on your window manager.
 
+## Bookmark mode
+
+AhoiPlank also has a bookmark mode. Just run it with:
+
+```bash
+ahoiplank --bookmark
+```
+
+It will read from your dotfiles `~/.config/ahoiplank/bookmarks.json`. For example:
+
+```json
+{
+  "bookmarks": [
+    { 
+        "name": "AhoiPlank", 
+        "url": "https://github.com/martuscellifaria/ahoiplank",
+        "icon": "zen-browser"
+    },
+    { 
+        "name": "AhoiCpp",
+        "url": "https://github.com/martuscellifaria/ahoicpp.nvim",
+        "icon": "zen-browser"
+    }
+  ]
+}
+```
+
 ## Running the daemon on background
 
 You are also able to run `ahoiplank` on the background by starting with:
@@ -148,3 +175,14 @@ ahoiplank --version
 ```bash
 ahoiplank --help
 ```
+
+## Dotfiles
+
+This repo also contains my two example dotfiles. They are located at the `dotfiles/` directory, relative to the root of the repo once cloned.
+The following does the trick.
+
+```bash
+mkdir -p ~/.config/ahoiplank && cp dotfiles/config.json dotfiles/bookmarks.json ~/.config/ahoiplank/
+```
+
+That's it and thanks for using!

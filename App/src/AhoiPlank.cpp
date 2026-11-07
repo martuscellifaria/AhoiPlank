@@ -43,22 +43,26 @@ int main(int argc, char* argv[]) {
     bool daemon_start = false;
     bool daemon_stop = false;
     bool cold_show = false;
-    if (argc > 1) { 
+    QString mode = "standard";
+    if (argc > 1) {
         const QString arg = QString::fromLocal8Bit(argv[1]);
         if (arg == "--version") {
             std::println("{}", embedded_version);
             return 0;
         }
         else if (arg == "--help") {
-            std::println("AhoiPlank is a customizable launcher for Wayland.\n\n"
-                    "Usage: ahoiplank [OPTIONAL ARGUMENT], "
-                    "where [OPTIONAL ARGUMENT] is one among the following:\n"
+            std::println("AhoiPlank is a customizable launcher for Wayland.\n"
+		    "You can find more at https://github.com/martuscellifaria/AhoiPlank\n\n"
+                    "Usage: ahoiplank [OPTIONAL], "
+                    "where [OPTIONAL] is one among the following:\n\n"
                     "    --daemon-start\n"
-                    "\tStarts AhoiPlank daemon in background to better user feel.\n"
+                    "\tStarts AhoiPlank daemon in background to better user feel.\n\n"
                     "    --daemon-stop\n"
-                    "\tStops AhoiPlank daemon.\n"
+                    "\tStops AhoiPlank daemon.\n\n"
+                    "    --bookmark\n"
+                    "\tOpens the launcher in bookmark mode.\n\n"
                     "    --version\n"
-                    "\tShows version metadata.\n"
+                    "\tShows version metadata.\n\n"
                     "    --help\n"
                     "\tShows this helper.");
             return 0;
@@ -68,6 +72,9 @@ int main(int argc, char* argv[]) {
         }
         else if (arg == "--daemon-start") {
             daemon_start = true;
+        }
+        else if (arg == "--bookmark") {
+            mode = "bookmark";
         }
     }
 
@@ -82,7 +89,8 @@ int main(int argc, char* argv[]) {
         }
     }
     else {
-        if (try_send_command("toggle")) {
+        const QByteArray cmd = QByteArray("toggle:") + mode.toUtf8();
+        if (try_send_command(cmd.constData())) {
             return 0;
         }
         cold_show = true;
@@ -209,8 +217,10 @@ int main(int argc, char* argv[]) {
         const bool show = !win->isVisible();
         if (show) {
             theme_config.reload();
+            controller.reload();
             apply_margins();
             controller.set_filter(QStringLiteral(""));
+            controller.request_reset();
             win->show();
             win->requestActivate();
         }
@@ -226,9 +236,15 @@ int main(int argc, char* argv[]) {
 
     QObject::connect(&server, &QLocalServer::newConnection, [&]() {
         while (auto* c = server.nextPendingConnection()) {
-            QObject::connect(c, &QLocalSocket::readyRead, [c, &toggle, &quit]() {
+            QObject::connect(c, &QLocalSocket::readyRead, [c, &toggle, &quit, &controller]() {
                 const QByteArray msg = c->readAll().trimmed();
-                if (msg == "toggle") {
+                if (msg.startsWith("toggle")) {
+                    if (msg.size() > 6 && msg.at(6) == ':') {
+                        controller.set_mode(QString::fromUtf8(msg.mid(7)));
+                    }
+                    else {
+                        controller.set_mode(QStringLiteral("standard"));
+                    }
                     toggle();
                 }
                 else if (msg == "ping") {
@@ -244,6 +260,9 @@ int main(int argc, char* argv[]) {
     });
 
     if (cold_show) {
+        controller.set_mode(mode);
+        controller.set_filter(QStringLiteral(""));
+        controller.request_reset();
         win->show();
         win->requestActivate();
     }

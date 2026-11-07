@@ -5,9 +5,15 @@
 #include <QRegularExpression>
 #include <QSettings>
 #include <QFileInfo>
+#include <QFile>
 #include <QIcon>
 #include <QPixmap>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QStandardPaths>
 #include <algorithm>
+#include <print>
 
 namespace {
 
@@ -94,7 +100,8 @@ double fuzzy_score_multi(const QString& query, const QString& target) {
 } // namespace
 
 EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
-    load_desktop_files();
+    std::println("EntryModel ctor, mode={}", mode_.toStdString());
+    rebuild();
 }
 
 int EntryModel::rowCount(const QModelIndex&) const {
@@ -123,6 +130,46 @@ QHash<int, QByteArray> EntryModel::roleNames() const {
         { Qt::UserRole + 3, "comment" },
         { Qt::UserRole + 4, "icon"    },
     };
+}
+
+void EntryModel::set_mode(const QString& mode) {
+    std::println("set_mode: {} -> {}", mode_.toStdString(), mode.toStdString());
+    if (mode == mode_) {
+        return;
+    }
+    mode_ = mode;
+    rebuild();
+    emit modeChanged();
+}
+
+void EntryModel::reload() {
+    std::println("reload, mode={}", mode_.toStdString());
+    rebuild();
+}
+
+void EntryModel::request_reset() {
+    emit resetRequested();
+}
+
+void EntryModel::rebuild() {
+    beginResetModel();
+    all_.clear();
+    filtered_.clear();
+
+    if (mode_ == "bookmark") {
+        load_bookmarks();
+        std::println("bookmark mode: {} entries", all_.size());
+    }
+    else {
+        load_desktop_files();
+        std::println("standard mode: {} entries", all_.size());
+    }
+
+    std::sort(all_.begin(), all_.end(),
+              [](const Entry& a, const Entry& b) { return a.name < b.name; });
+
+    filtered_ = all_;
+    endResetModel();
 }
 
 void EntryModel::set_filter(const QString& query) {
@@ -165,6 +212,16 @@ bool EntryModel::launch(int row) {
         return false;
     }
     const auto& e = filtered_.at(row);
+
+    if (mode_ == "bookmark") {
+        const bool ok = QProcess::startDetached("xdg-open", { e.exec });
+        std::println("launch bookmark: {} -> {}", e.exec.toStdString(), ok);
+        if (ok) {
+            emit dismissed();
+        }
+        return ok;
+    }
+
     QString exec = e.exec;
     static const QRegularExpression field_code(R"(%[fFuUdDnNickvm])");
     exec.remove(field_code);
@@ -173,6 +230,7 @@ bool EntryModel::launch(int row) {
         return false;
     }
     const bool ok = QProcess::startDetached(argv.takeFirst(), argv);
+    std::println("launch app: {} -> {}", exec.toStdString(), ok);
     if (ok) {
         emit dismissed();
     }
@@ -205,11 +263,41 @@ void EntryModel::load_desktop_files() {
             }
         }
     }
+}
 
-    std::sort(all_.begin(), all_.end(),
-              [](const Entry& a, const Entry& b) { return a.name < b.name; });
+void EntryModel::load_bookmarks() {
+    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+                         + "/ahoiplank/bookmarks.json";
+    std::println("loading bookmarks from {}", path.toStdString());
 
-    filtered_ = all_;
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) {
+        std::println("bookmarks file open failed");
+        return;
+    }
+
+    const QJsonObject root = QJsonDocument::fromJson(f.readAll()).object();
+    if (root.isEmpty()) {
+        std::println("bookmarks json empty");
+        return;
+    }
+
+    const QJsonArray arr = root.value("bookmarks").toArray();
+    for (const auto& v : arr) {
+        const QJsonObject o = v.toObject();
+        Entry e;
+        e.name = o.value("name").toString();
+        e.exec = o.value("url").toString();
+        e.comment = o.value("comment").toString();
+        e.icon = o.value("icon").toString();
+        if (e.icon.isEmpty()) {
+            e.icon = QStringLiteral("zen-browser");
+        }
+        e.lower_name = e.name.toLower();
+        if (!e.name.isEmpty() && !e.exec.isEmpty()) {
+            all_.append(e);
+        }
+    }
 }
 
 bool EntryModel::parse_desktop(const QString& path, Entry& out) {

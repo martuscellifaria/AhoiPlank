@@ -1,0 +1,15 @@
+{
+  "bookmarks": [
+    { 
+        "name": "AhoiPlank", 
+        "url": "https://github.com/martuscellifaria/ahoiplank",
+        "icon": "zen-browser"
+    },
+    { 
+        "name": "AhoiCpp",
+        "url": "https://github.com/martuscellifaria/ahoicpp.nvim",
+        "icon": "zen-browser"
+    }
+  ]
+}
+

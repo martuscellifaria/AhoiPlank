@@ -15,16 +15,23 @@ Window {
     onActiveChanged: {
         if (active) {
             was_active = true
+            search.forceActiveFocus()
         } else if (was_active && visible) {
             was_active = false
             app.dismiss()
         }
     }
 
+    Connections {
+        target: app
+        function onResetRequested() {
+            search.text = ""
+            search.forceActiveFocus()
+        }
+    }
+
     Shortcut { sequence: "Esc";    onActivated: app.dismiss() }
     Shortcut { sequence: "Return"; onActivated: app.launch(list.currentIndex) }
-
-    Component.onCompleted: search.forceActiveFocus()
 
     Rectangle {
         anchors.fill: parent

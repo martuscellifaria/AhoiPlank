@@ -1,4 +1,3 @@
-# ahoiplank.bash-completion
 _ahoiplank() {
     local cur prev
     cur=${COMP_WORDS[COMP_CWORD]}
@@ -10,7 +9,7 @@ _ahoiplank() {
     esac
 
     if [[ $cur == -* ]]; then
-        COMPREPLY=( $(compgen -W "--version --daemon-start --daemon-stop --help" -- "$cur") )
+        COMPREPLY=( $(compgen -W "--version --bookmark --daemon-start --daemon-stop --help" -- "$cur") )
     fi
 }
 complete -F _ahoiplank ahoiplank

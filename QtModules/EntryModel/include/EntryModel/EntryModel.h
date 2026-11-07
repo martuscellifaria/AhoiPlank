@@ -21,12 +21,22 @@ public:
     Q_INVOKABLE bool launch(int row);
     Q_INVOKABLE void quit();
     Q_INVOKABLE void dismiss();
+    Q_INVOKABLE void set_mode(const QString& mode);
+    Q_INVOKABLE void reload();
+
+    QString mode() const { return mode_; }
+
+    void request_reset();
 
 signals:
     void dismissed();
+    void resetRequested();
+    void modeChanged();
 
 private:
     void load_desktop_files();
+    void load_bookmarks();
+    void rebuild();
 
     struct Entry {
         QString name;
@@ -37,6 +47,7 @@ private:
     };
     static bool parse_desktop(const QString& path, Entry& out);
 
+    QString mode_ = QStringLiteral("standard");
     QVector<Entry> all_;
     QVector<Entry> filtered_;
 };
