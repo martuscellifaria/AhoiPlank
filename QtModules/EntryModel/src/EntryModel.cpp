@@ -13,7 +13,6 @@
 #include <QJsonArray>
 #include <QStandardPaths>
 #include <algorithm>
-#include <print>
 
 namespace {
 
@@ -100,7 +99,6 @@ double fuzzy_score_multi(const QString& query, const QString& target) {
 } // namespace
 
 EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
-    std::println("EntryModel ctor, mode={}", mode_.toStdString());
     rebuild();
 }
 
@@ -133,7 +131,6 @@ QHash<int, QByteArray> EntryModel::roleNames() const {
 }
 
 void EntryModel::set_mode(const QString& mode) {
-    std::println("set_mode: {} -> {}", mode_.toStdString(), mode.toStdString());
     if (mode == mode_) {
         return;
     }
@@ -143,7 +140,6 @@ void EntryModel::set_mode(const QString& mode) {
 }
 
 void EntryModel::reload() {
-    std::println("reload, mode={}", mode_.toStdString());
     rebuild();
 }
 
@@ -158,11 +154,9 @@ void EntryModel::rebuild() {
 
     if (mode_ == "bookmark") {
         load_bookmarks();
-        std::println("bookmark mode: {} entries", all_.size());
     }
     else {
         load_desktop_files();
-        std::println("standard mode: {} entries", all_.size());
     }
 
     std::sort(all_.begin(), all_.end(),
@@ -215,7 +209,6 @@ bool EntryModel::launch(int row) {
 
     if (mode_ == "bookmark") {
         const bool ok = QProcess::startDetached("xdg-open", { e.exec });
-        std::println("launch bookmark: {} -> {}", e.exec.toStdString(), ok);
         if (ok) {
             emit dismissed();
         }
@@ -230,7 +223,6 @@ bool EntryModel::launch(int row) {
         return false;
     }
     const bool ok = QProcess::startDetached(argv.takeFirst(), argv);
-    std::println("launch app: {} -> {}", exec.toStdString(), ok);
     if (ok) {
         emit dismissed();
     }
@@ -268,17 +260,14 @@ void EntryModel::load_desktop_files() {
 void EntryModel::load_bookmarks() {
     const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                          + "/ahoiplank/bookmarks.json";
-    std::println("loading bookmarks from {}", path.toStdString());
 
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly)) {
-        std::println("bookmarks file open failed");
         return;
     }
 
     const QJsonObject root = QJsonDocument::fromJson(f.readAll()).object();
     if (root.isEmpty()) {
-        std::println("bookmarks json empty");
         return;
     }
 
