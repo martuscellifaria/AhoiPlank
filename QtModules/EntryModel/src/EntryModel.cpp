@@ -13,6 +13,11 @@
 #include <QJsonArray>
 #include <QStandardPaths>
 #include <algorithm>
+#include <print>
+#include <qdir.h>
+#include <qhashfunctions.h>
+#include <qprocess.h>
+#include <qtenvironmentvariables.h>
 
 namespace {
 
@@ -155,12 +160,17 @@ void EntryModel::rebuild() {
     if (mode_ == "bookmark") {
         load_bookmarks();
     }
+    else if (mode_ == "dotfiles") {
+        load_dotfiles();
+    }
     else {
         load_desktop_files();
     }
 
     std::sort(all_.begin(), all_.end(),
-              [](const Entry& a, const Entry& b) { return a.name < b.name; });
+          [](const Entry& a, const Entry& b) {
+              return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
+          });
 
     filtered_ = all_;
     endResetModel();
@@ -209,6 +219,53 @@ bool EntryModel::launch(int row) {
 
     if (mode_ == "bookmark") {
         const bool ok = QProcess::startDetached("xdg-open", { e.exec });
+        if (ok) {
+            emit dismissed();
+        }
+        return ok;
+    }
+
+    if (mode_ == "dotfiles") {
+        QString terminal = text_editor_terminal_;
+        if (terminal.isEmpty()) {
+            terminal = qEnvironmentVariable("TERMINAL");
+        }
+        if (terminal.isEmpty()) {
+            static const char* const candidates[] = {
+                "alacritty", "foot", "kitty", "wezterm", "ghostty",
+                "konsole", "gnome-terminal", "xfce4-terminal", "xterm",
+                nullptr,
+            };
+            for (const char* const* c = candidates; *c; ++c) {
+                if (!QStandardPaths::findExecutable(QString::fromLatin1(*c)).isEmpty()) {
+                    terminal = QString::fromLatin1(*c);
+                    break;
+                }
+            }
+        }
+        if (terminal.isEmpty()) {
+            std::println(stderr, "dotfiles: no terminal found, set text_editor_terminal in config.json");
+            return false;
+        }
+        QString quoted_path = e.exec;
+        quoted_path.replace('\'', QStringLiteral("'\\''"));
+        const QString script = QStringLiteral("cd '%1' && exec %2 .").arg(quoted_path, text_editor_);
+
+        QStringList args;
+        if (terminal.endsWith("gnome-terminal")) {
+            args = { "--", "sh", "-c", script };
+        }
+        else if (terminal.endsWith("wezterm")) {
+            args = { "start", "--", "sh", "-c", script };
+        }
+        else if (terminal.endsWith("xfce4-terminal")) {
+            args = { "-x", "sh", "-c", script };
+        }
+        else {
+            args = { "-e", "sh", "-c", script };
+        }
+
+        const bool ok = QProcess::startDetached(terminal, args);
         if (ok) {
             emit dismissed();
         }
@@ -277,6 +334,9 @@ void EntryModel::load_bookmarks() {
         Entry e;
         e.name = o.value("name").toString();
         e.exec = o.value("url").toString();
+        if (!e.exec.startsWith("http://") || !e.exec.startsWith("https://")) {
+            e.exec = "http://" + e.exec;
+        }
         e.comment = o.value("comment").toString();
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {
@@ -287,6 +347,30 @@ void EntryModel::load_bookmarks() {
             all_.append(e);
         }
     }
+}
+
+void EntryModel::load_dotfiles() {
+    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+
+    QDir config_dir(path);
+    if (!config_dir.exists()) {
+        return;
+    }
+
+    const auto dirs = config_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const auto& name : dirs) {
+        if (name.startsWith(".")) {
+            continue;
+        }
+        Entry e;
+        e.name = name;
+        e.exec = config_dir.filePath(name);
+        e.comment = e.exec;
+        e.icon = QStringLiteral("folder");
+        e.lower_name = name.toLower();
+        all_.append(e);
+    }
+
 }
 
 bool EntryModel::parse_desktop(const QString& path, Entry& out) {

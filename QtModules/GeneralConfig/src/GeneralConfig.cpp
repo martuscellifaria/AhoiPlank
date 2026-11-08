@@ -1,4 +1,4 @@
-#include "ThemeConfig.h"
+#include "GeneralConfig.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -67,11 +67,11 @@ QString config_path() {
 
 } // namespace
 
-ThemeConfig::ThemeConfig(QObject *parent) : QObject(parent) {
+GeneralConfig::GeneralConfig(QObject *parent) : QObject(parent) {
     reload();
 }
 
-void ThemeConfig::reload() {
+void GeneralConfig::reload() {
     QColor bg         { QStringLiteral("#1f2335") };
     QColor bg_input   { QStringLiteral("#1a1b26") };
     QColor fg         { QStringLiteral("#c0caf5") };
@@ -91,33 +91,39 @@ void ThemeConfig::reload() {
     int screen_width  { 640 };
     int screen_height { 420 };
     QString vertical_position = "center";
+    QString text_editor = "vim";
+    QString text_editor_terminal = "";
 
     QFile f(config_path());
     if (f.open(QIODevice::ReadOnly)) {
         const QJsonObject root = QJsonDocument::fromJson(f.readAll()).object();
         if (!root.isEmpty()) {
-            const QJsonObject colors = root.value("colors").toObject();
+            const QJsonObject style = root.value("style").toObject();
+            const QJsonObject colors = style.value("colors").toObject();
 
-            bg        = color_or(colors, "bg",        bg);
-            bg_input  = color_or(colors, "bg_input",  bg_input);
-            fg        = color_or(colors, "fg",        fg);
-            fg_dim    = color_or(colors, "fg_dim",    fg_dim);
-            border    = color_or(colors, "border",    border);
+            bg  = color_or(colors, "bg", bg);
+            bg_input = color_or(colors, "bg_input", bg_input);
+            fg = color_or(colors, "fg", fg);
+            fg_dim = color_or(colors, "fg_dim", fg_dim);
+            border = color_or(colors, "border", border);
             selection = color_or(colors, "selection", selection);
-            accent    = color_or(colors, "accent",    accent);
+            accent = color_or(colors, "accent", accent);
 
-            font_family       = string_or(root, "font_family",       font_family);
-            font_size_search  = int_or(root, "font_size_search",     font_size_search);
-            font_size_title   = int_or(root, "font_size_title",      font_size_title);
-            font_size_comment = int_or(root, "font_size_comment",    font_size_comment);
+            text_editor = string_or(root, "text_editor", text_editor);
+            text_editor_terminal = string_or(root, "text_editor_terminal", text_editor_terminal);
 
-            radius_window = int_or(root, "radius_window", radius_window);
-            radius_item   = int_or(root, "radius_item",   radius_item);
+            font_family = string_or(style, "font_family", font_family);
+            font_size_search = int_or(style, "font_size_search", font_size_search);
+            font_size_title = int_or(style, "font_size_title", font_size_title);
+            font_size_comment = int_or(style, "font_size_comment", font_size_comment);
 
-            screen_width  = int_or(root, "screen_width",  screen_width);
-            screen_height = int_or(root, "screen_height", screen_height);
+            radius_window = int_or(style, "radius_window", radius_window);
+            radius_item = int_or(style, "radius_item",   radius_item);
 
-            const QJsonValue vp = root.value("vertical_position");
+            screen_width  = int_or(style, "screen_width",  screen_width);
+            screen_height = int_or(style, "screen_height", screen_height);
+
+            const QJsonValue vp = style.value("vertical_position");
             if (vp.isString()) {
                 vertical_position = vp.toString();
             }
@@ -127,25 +133,28 @@ void ThemeConfig::reload() {
         }
     }
 
-    bg_        = bg;
-    bg_input_  = bg_input;
-    fg_        = fg;
-    fg_dim_    = fg_dim;
-    border_    = border;
+    bg_ = bg;
+    bg_input_ = bg_input;
+    fg_ = fg;
+    fg_dim_ = fg_dim;
+    border_ = border;
     selection_ = selection;
-    accent_    = accent;
+    accent_ = accent;
 
-    font_family_       = font_family;
-    font_size_search_  = font_size_search;
-    font_size_title_   = font_size_title;
+    font_family_ = font_family;
+    font_size_search_ = font_size_search;
+    font_size_title_ = font_size_title;
     font_size_comment_ = font_size_comment;
 
     radius_window_ = radius_window;
-    radius_item_   = radius_item;
+    radius_item_ = radius_item;
 
-    screen_width_  = screen_width;
+    screen_width_ = screen_width;
     screen_height_ = screen_height;
     vertical_position_ = vertical_position;
+
+    text_editor_ = text_editor;
+    text_editor_terminal_ = text_editor_terminal;
 
     emit changed();
 }

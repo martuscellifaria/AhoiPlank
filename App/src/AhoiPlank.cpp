@@ -1,6 +1,6 @@
 #include "version.h"
 #include "EntryModel.h"
-#include "ThemeConfig.h"
+#include "GeneralConfig.h"
 #include <QFile>
 #include <QDir>
 #include <QGuiApplication>
@@ -44,6 +44,7 @@ int main(int argc, char* argv[]) {
     bool daemon_stop = false;
     bool cold_show = false;
     QString mode = "standard";
+    QIcon::setThemeName(QStringLiteral("Adwaita"));
     if (argc > 1) {
         const QString arg = QString::fromLocal8Bit(argv[1]);
         if (arg == "--version") {
@@ -52,7 +53,7 @@ int main(int argc, char* argv[]) {
         }
         else if (arg == "--help") {
             std::println("AhoiPlank is a customizable launcher for Wayland.\n"
-		    "You can find more at https://github.com/martuscellifaria/AhoiPlank\n\n"
+                    "You can find more at https://github.com/martuscellifaria/AhoiPlank\n\n"
                     "Usage: ahoiplank [OPTIONAL], "
                     "where [OPTIONAL] is one among the following:\n\n"
                     "    --daemon-start\n"
@@ -61,6 +62,8 @@ int main(int argc, char* argv[]) {
                     "\tStops AhoiPlank daemon.\n\n"
                     "    --bookmark\n"
                     "\tOpens the launcher in bookmark mode.\n\n"
+                    "    --dotfiles\n"
+                    "\tOpens the launcher in dotfiles mode.\n\n"
                     "    --version\n"
                     "\tShows version metadata.\n\n"
                     "    --help\n"
@@ -75,6 +78,9 @@ int main(int argc, char* argv[]) {
         }
         else if (arg == "--bookmark") {
             mode = "bookmark";
+        }
+        else if (arg == "--dotfiles") {
+            mode = "dotfiles";
         }
     }
 
@@ -145,12 +151,12 @@ int main(int argc, char* argv[]) {
     }
 
     EntryModel controller;
-    ThemeConfig theme_config;
+    GeneralConfig general_config;
 
     QQmlApplicationEngine engine;
     engine.addImageProvider("icon", new IconProvider);
     engine.rootContext()->setContextProperty("app", &controller);
-    engine.rootContext()->setContextProperty("theme", &theme_config);
+    engine.rootContext()->setContextProperty("theme", &general_config);
 
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed,
@@ -188,9 +194,9 @@ int main(int argc, char* argv[]) {
             scr = QGuiApplication::primaryScreen();
         }
         const int screen_h = scr ? scr->geometry().height() : 0;
-        const int win_h = theme_config.screen_height();
+        const int win_h = general_config.screen_height();
 
-        const QString pos = theme_config.vertical_position();
+        const QString pos = general_config.vertical_position();
         bool is_number = false;
         const int as_int = pos.toInt(&is_number);
 
@@ -216,7 +222,9 @@ int main(int argc, char* argv[]) {
     auto toggle = [&]() {
         const bool show = !win->isVisible();
         if (show) {
-            theme_config.reload();
+            general_config.reload();
+            controller.set_text_editor(general_config.text_editor());
+            controller.set_text_editor_terminal(general_config.text_editor_terminal());
             controller.reload();
             apply_margins();
             controller.set_filter(QStringLiteral(""));
@@ -261,6 +269,8 @@ int main(int argc, char* argv[]) {
 
     if (cold_show) {
         controller.set_mode(mode);
+        controller.set_text_editor(general_config.text_editor());
+        controller.set_text_editor_terminal(general_config.text_editor_terminal());
         controller.set_filter(QStringLiteral(""));
         controller.request_reset();
         win->show();

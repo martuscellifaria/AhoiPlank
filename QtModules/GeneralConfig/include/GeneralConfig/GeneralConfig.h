@@ -3,9 +3,10 @@
 #include <QColor>
 #include <QObject>
 #include <QString>
+#include <qhashfunctions.h>
 #include <qtmetamacros.h>
 
-class ThemeConfig : public QObject {
+class GeneralConfig : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(QColor bg        READ bg        NOTIFY changed)
@@ -29,8 +30,11 @@ class ThemeConfig : public QObject {
 
     Q_PROPERTY(QString vertical_position READ vertical_position NOTIFY changed)
 
+    Q_PROPERTY(QString text_editor READ text_editor NOTIFY changed)
+    Q_PROPERTY(QString text_editor_terminal READ text_editor_terminal NOTIFY changed)
+
 public:
-    explicit ThemeConfig(QObject *parent = nullptr);
+    explicit GeneralConfig(QObject *parent = nullptr);
 
     QColor bg()        const { return bg_; }
     QColor bg_input()  const { return bg_input_; }
@@ -51,6 +55,8 @@ public:
     int screen_width()  const { return screen_width_; }
     int screen_height() const { return screen_height_; }
     QString vertical_position() const { return vertical_position_; }
+    QString text_editor() const { return text_editor_; }
+    QString text_editor_terminal() const { return text_editor_terminal_; }
 
     void reload();
 
@@ -77,4 +83,6 @@ private:
     int screen_width_  { 640 };
     int screen_height_ { 420 };
     QString vertical_position_ = "center";
+    QString text_editor_ = "vim";
+    QString text_editor_terminal_ = "";
 };
