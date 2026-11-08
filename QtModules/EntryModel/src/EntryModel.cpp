@@ -334,7 +334,7 @@ void EntryModel::load_bookmarks() {
         Entry e;
         e.name = o.value("name").toString();
         e.exec = o.value("url").toString();
-        if (!e.exec.startsWith("http://") || !e.exec.startsWith("https://")) {
+        if (!e.exec.startsWith("http://") && !e.exec.startsWith("https://")) {
             e.exec = "http://" + e.exec;
         }
         e.comment = o.value("comment").toString();
