@@ -1,7 +1,13 @@
 # AhoiPlank
 
 A minimal and customizable Wayland launcher built with Qt 6 and QML, bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
-Its features are fuzzy search, standard mode for launching desktop applications, bookmark mode for opening bookmarks on the browser and dotfiles mode, for opening your dotfiles on your favorite terminal and terminal-based text editor.
+
+Its features are:
+- fuzzy search
+- standard mode for launching desktop applications
+- bookmark mode for opening bookmarks on the browser
+- dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor.
+
 `ahoiplank` has also a daemon.
 
 Currently `AhoiPlank` looks like:
