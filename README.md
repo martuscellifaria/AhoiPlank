@@ -209,7 +209,7 @@ This repo also contains my two example dotfiles. They are located at the `dotfil
 The following does the trick.
 
 ```bash
-mkdir -p ~/.config/ahoiplank && cp dotfiles/config.json dotfiles/bookmarks.json ~/.config/ahoiplank/
+cp -r dotfiles/ahoiplank ~/.config
 ```
 
 That's it and thanks for using!
