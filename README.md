@@ -1,6 +1,4 @@
-# AhoiPlank
-
-![AhoiPlank](resources/plank.png)
+# AhoiPlank <img src="resources/plank.png" width="20" height="20" alt="icon">
 
 A minimal and customizable Wayland launcher built with Qt 6 and QML, bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
 
