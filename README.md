@@ -1,5 +1,7 @@
 # AhoiPlank
 
+![AhoiPlank](resources/plank.png)
+
 A minimal and customizable Wayland launcher built with Qt 6 and QML, bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
 
 Its features are:
