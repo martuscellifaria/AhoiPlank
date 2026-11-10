@@ -104,10 +104,17 @@ int main(int argc, char* argv[]) {
 
     const QString wl_display = qEnvironmentVariable("WAYLAND_DISPLAY");
     const QString runtime_dir = qEnvironmentVariable("XDG_RUNTIME_DIR");
+    const QString session_type = qEnvironmentVariable("XDG_SESSION_TYPE");
 
     if (wl_display.isEmpty() || runtime_dir.isEmpty()) {
         std::println(stderr, "AhoiPlank: WAYLAND_DISPLAY "
                 "or XDG_RUNTIME_DIR not set.");
+        return 1;
+    }
+
+    if (session_type.isEmpty() || session_type != "wayland") {
+        std::println(stderr, "AhoiPlank: XDG_SESSION_TYPE "
+                "not set to wayland.");
         return 1;
     }
 
