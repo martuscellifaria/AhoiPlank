@@ -1,11 +1,17 @@
-# AhoiPlank
+# AhoiPlank <img src="resources/plank.png" width="30" height="30" alt="icon">
 
-A minimal Wayland application launcher (wofi/rofi - like) built with Qt 6 and QML, bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
-It contains currently fuzzy search, `.desktop` file parsing, icon theme support, layer-shell overlay and single-instance toggling.
-You can run `ahoiplank` daemon on the background to make the interaction snappier.
+A minimal and customizable Wayland launcher built with Qt 6 and QML, bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
+
+Its features are:
+- fuzzy search
+- standard mode for launching desktop applications
+- bookmark mode for opening bookmarks on the browser
+- dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor.
+
+`ahoiplank` has also a daemon.
 
 Currently `AhoiPlank` looks like:
-![AhoiPlank window](ahoiplank-window.png)
+![AhoiPlank window](resources/ahoiplank-window.png)
 
 Currently tested on `sway` and `hyprland`, but should work on other Wayland wms as well.
 
@@ -89,27 +95,31 @@ This is also under development, how extensible it will be. My first config file 
 
 ```json
 {
-  "screen_width": 640,
-  "screen_height": 420,
-  "vertical_position": "center",
+    "text_editor": "nvim",
+    "text_editor_terminal": "alacritty",
+    "style": {
+        "screen_width": 640,
+        "screen_height": 420,
+        "vertical_position": "center",
 
-  "radius_window": 14,
-  "radius_item": 8,
+        "radius_window": 14,
+        "radius_item": 8,
 
-  "font_family": "monospace",
-  "font_size_search": 18,
-  "font_size_title": 14,
-  "font_size_comment": 11,
+        "font_family": "monospace",
+        "font_size_search": 18,
+        "font_size_title": 14,
+        "font_size_comment": 11,
 
-  "colors": {
-    "bg":        "#1f2335",
-    "bg_input":  "#1a1b26",
-    "fg":        "#c0caf5",
-    "fg_dim":    "#a9b1d6",
-    "border":    "#7dcfff66",
-    "selection": "#7dcfff24",
-    "accent":    "#f7768e"
-  }
+        "colors": {
+            "bg":        "#1f2335",
+            "bg_input":  "#1a1b26",
+            "fg":        "#c0caf5",
+            "fg_dim":    "#a9b1d6",
+            "border":    "#7dcfff66",
+            "selection": "#7dcfff24",
+            "accent":    "#f7768e"
+        }
+    }
 }
 ```
 
@@ -123,15 +133,17 @@ sudo cp build/App/AhoiPlank /usr/local/bin/ahoiplank
 
 Then you will be able to run it with `ahoiplank` from your terminal or add it to your keybindings on your window manager.
 
-## Bookmark mode
+## Additional modes
 
-AhoiPlank also has a bookmark mode. Just run it with:
+Besides the standard desktop launcher mode, `ahoiplank` can also be launched in the following modes:
+
+### Bookmark
 
 ```bash
 ahoiplank --bookmark
 ```
 
-It will read from your dotfiles `~/.config/ahoiplank/bookmarks.json`. For example:
+It will read from `~/.config/ahoiplank/bookmarks.json`. For example:
 
 ```json
 {
@@ -149,6 +161,21 @@ It will read from your dotfiles `~/.config/ahoiplank/bookmarks.json`. For exampl
   ]
 }
 ```
+Then:
+
+![AhoiPlank bookmark mode](resources/ahoiplank-bookmark-window.png)
+
+And then it will open on your default browser.
+
+### Dotfiles
+
+```bash
+ahoiplank --dotfiles
+```
+
+It will read all directories inside `~/.config`. You will then be able to browse your dotfiles from `ahoiplank` in your own terminal and editor. These are set in the `config.json` file.
+
+![AhoiPlank dotfiles mode](resources/ahoiplank-dotfiles-window.png)
 
 ## Running the daemon on background
 
@@ -182,7 +209,7 @@ This repo also contains my two example dotfiles. They are located at the `dotfil
 The following does the trick.
 
 ```bash
-mkdir -p ~/.config/ahoiplank && cp dotfiles/config.json dotfiles/bookmarks.json ~/.config/ahoiplank/
+cp -r dotfiles/ahoiplank ~/.config
 ```
 
 That's it and thanks for using!

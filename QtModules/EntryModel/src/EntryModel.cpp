@@ -14,6 +14,10 @@
 #include <QStandardPaths>
 #include <algorithm>
 #include <print>
+#include <qdir.h>
+#include <qhashfunctions.h>
+#include <qprocess.h>
+#include <qtenvironmentvariables.h>
 
 namespace {
 
@@ -100,7 +104,6 @@ double fuzzy_score_multi(const QString& query, const QString& target) {
 } // namespace
 
 EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
-    std::println("EntryModel ctor, mode={}", mode_.toStdString());
     rebuild();
 }
 
@@ -133,7 +136,6 @@ QHash<int, QByteArray> EntryModel::roleNames() const {
 }
 
 void EntryModel::set_mode(const QString& mode) {
-    std::println("set_mode: {} -> {}", mode_.toStdString(), mode.toStdString());
     if (mode == mode_) {
         return;
     }
@@ -143,7 +145,6 @@ void EntryModel::set_mode(const QString& mode) {
 }
 
 void EntryModel::reload() {
-    std::println("reload, mode={}", mode_.toStdString());
     rebuild();
 }
 
@@ -158,15 +159,18 @@ void EntryModel::rebuild() {
 
     if (mode_ == "bookmark") {
         load_bookmarks();
-        std::println("bookmark mode: {} entries", all_.size());
+    }
+    else if (mode_ == "dotfiles") {
+        load_dotfiles();
     }
     else {
         load_desktop_files();
-        std::println("standard mode: {} entries", all_.size());
     }
 
     std::sort(all_.begin(), all_.end(),
-              [](const Entry& a, const Entry& b) { return a.name < b.name; });
+          [](const Entry& a, const Entry& b) {
+              return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
+          });
 
     filtered_ = all_;
     endResetModel();
@@ -215,7 +219,53 @@ bool EntryModel::launch(int row) {
 
     if (mode_ == "bookmark") {
         const bool ok = QProcess::startDetached("xdg-open", { e.exec });
-        std::println("launch bookmark: {} -> {}", e.exec.toStdString(), ok);
+        if (ok) {
+            emit dismissed();
+        }
+        return ok;
+    }
+
+    if (mode_ == "dotfiles") {
+        QString terminal = text_editor_terminal_;
+        if (terminal.isEmpty()) {
+            terminal = qEnvironmentVariable("TERMINAL");
+        }
+        if (terminal.isEmpty()) {
+            static const char* const candidates[] = {
+                "alacritty", "foot", "kitty", "wezterm", "ghostty",
+                "konsole", "gnome-terminal", "xfce4-terminal", "xterm",
+                nullptr,
+            };
+            for (const char* const* c = candidates; *c; ++c) {
+                if (!QStandardPaths::findExecutable(QString::fromLatin1(*c)).isEmpty()) {
+                    terminal = QString::fromLatin1(*c);
+                    break;
+                }
+            }
+        }
+        if (terminal.isEmpty()) {
+            std::println(stderr, "dotfiles: no terminal found, set text_editor_terminal in config.json");
+            return false;
+        }
+        QString quoted_path = e.exec;
+        quoted_path.replace('\'', QStringLiteral("'\\''"));
+        const QString script = QStringLiteral("cd '%1' && exec %2 .").arg(quoted_path, text_editor_);
+
+        QStringList args;
+        if (terminal.endsWith("gnome-terminal")) {
+            args = { "--", "sh", "-c", script };
+        }
+        else if (terminal.endsWith("wezterm")) {
+            args = { "start", "--", "sh", "-c", script };
+        }
+        else if (terminal.endsWith("xfce4-terminal")) {
+            args = { "-x", "sh", "-c", script };
+        }
+        else {
+            args = { "-e", "sh", "-c", script };
+        }
+
+        const bool ok = QProcess::startDetached(terminal, args);
         if (ok) {
             emit dismissed();
         }
@@ -230,7 +280,6 @@ bool EntryModel::launch(int row) {
         return false;
     }
     const bool ok = QProcess::startDetached(argv.takeFirst(), argv);
-    std::println("launch app: {} -> {}", exec.toStdString(), ok);
     if (ok) {
         emit dismissed();
     }
@@ -268,17 +317,14 @@ void EntryModel::load_desktop_files() {
 void EntryModel::load_bookmarks() {
     const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                          + "/ahoiplank/bookmarks.json";
-    std::println("loading bookmarks from {}", path.toStdString());
 
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly)) {
-        std::println("bookmarks file open failed");
         return;
     }
 
     const QJsonObject root = QJsonDocument::fromJson(f.readAll()).object();
     if (root.isEmpty()) {
-        std::println("bookmarks json empty");
         return;
     }
 
@@ -288,6 +334,9 @@ void EntryModel::load_bookmarks() {
         Entry e;
         e.name = o.value("name").toString();
         e.exec = o.value("url").toString();
+        if (!e.exec.startsWith("http://") && !e.exec.startsWith("https://")) {
+            e.exec = "http://" + e.exec;
+        }
         e.comment = o.value("comment").toString();
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {
@@ -298,6 +347,30 @@ void EntryModel::load_bookmarks() {
             all_.append(e);
         }
     }
+}
+
+void EntryModel::load_dotfiles() {
+    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+
+    QDir config_dir(path);
+    if (!config_dir.exists()) {
+        return;
+    }
+
+    const auto dirs = config_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const auto& name : dirs) {
+        if (name.startsWith(".")) {
+            continue;
+        }
+        Entry e;
+        e.name = name;
+        e.exec = config_dir.filePath(name);
+        e.comment = e.exec;
+        e.icon = QStringLiteral("folder");
+        e.lower_name = name.toLower();
+        all_.append(e);
+    }
+
 }
 
 bool EntryModel::parse_desktop(const QString& path, Entry& out) {

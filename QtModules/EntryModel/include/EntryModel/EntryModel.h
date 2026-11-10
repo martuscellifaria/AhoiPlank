@@ -27,6 +27,8 @@ public:
     QString mode() const { return mode_; }
 
     void request_reset();
+    void set_text_editor(const QString& editor) { text_editor_ = editor; }
+    void set_text_editor_terminal(const QString& terminal) { text_editor_terminal_ = terminal; }
 
 signals:
     void dismissed();
@@ -36,6 +38,7 @@ signals:
 private:
     void load_desktop_files();
     void load_bookmarks();
+    void load_dotfiles();
     void rebuild();
 
     struct Entry {
@@ -48,6 +51,8 @@ private:
     static bool parse_desktop(const QString& path, Entry& out);
 
     QString mode_ = QStringLiteral("standard");
+    QString text_editor_ = QStringLiteral("vim");
+    QString text_editor_terminal_ = QStringLiteral("");
     QVector<Entry> all_;
     QVector<Entry> filtered_;
 };
