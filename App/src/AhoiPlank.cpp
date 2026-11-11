@@ -46,6 +46,16 @@ static bool try_send_command(const char* cmd) {
     return true;
 }
 
+static bool is_wsl() {
+    return std::getenv("WSL_DISTRO_NAME") != nullptr ||
+        std::getenv("WSL_INTEROP") != nullptr;
+}
+
+static bool is_ssh() {
+    return std::getenv("SSH_CONNECTION") != nullptr ||
+        std::getenv("SSH_CLIENT") != nullptr ||
+        std::getenv("SSH_TTY") != nullptr;
+}
 
 int main(int argc, char* argv[]) {
     bool daemon_start = false;
@@ -89,6 +99,16 @@ int main(int argc, char* argv[]) {
         else if (arg == "--dotfiles") {
             mode = "dotfiles";
         }
+    }
+
+    if (is_wsl()) {
+        std::println(stderr, "AhoiPlank: running on WSL "
+                "may mess things up. Not starting.");
+    }
+
+    if (is_ssh()) {
+        std::println(stderr, "AhoiPlank: running on an SSH "
+                "session is not the way intended. Not starting");
     }
 
     if (daemon_stop) {
