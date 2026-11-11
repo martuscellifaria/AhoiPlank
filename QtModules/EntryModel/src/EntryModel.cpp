@@ -2,8 +2,6 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QProcess>
-#include <QRegularExpression>
-#include <QSettings>
 #include <QFileInfo>
 #include <QFile>
 #include <QIcon>
@@ -12,12 +10,9 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QStandardPaths>
+#include <QSet>
 #include <algorithm>
 #include <print>
-#include <qdir.h>
-#include <qhashfunctions.h>
-#include <qprocess.h>
-#include <qtenvironmentvariables.h>
 
 namespace {
 
@@ -108,14 +103,14 @@ EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
 }
 
 int EntryModel::rowCount(const QModelIndex&) const {
-    return static_cast<int>(filtered_.size());
+    return static_cast<int>(filtered_idx_.size());
 }
 
 QVariant EntryModel::data(const QModelIndex& idx, int role) const {
-    if (!idx.isValid() || idx.row() >= filtered_.size()) {
+    if (!idx.isValid() || idx.row() >= filtered_idx_.size()) {
         return {};
     }
-    const auto& e = filtered_.at(idx.row());
+    const auto& e = all_.at(filtered_idx_.at(idx.row()));
     switch (role) {
         case Qt::UserRole + 1: return e.name;
         case Qt::UserRole + 2: return e.exec;
@@ -153,9 +148,11 @@ void EntryModel::request_reset() {
 }
 
 void EntryModel::rebuild() {
+    current_filter_.clear();
+
     beginResetModel();
     all_.clear();
-    filtered_.clear();
+    filtered_idx_.clear();
 
     if (mode_ == "bookmark") {
         load_bookmarks();
@@ -172,50 +169,62 @@ void EntryModel::rebuild() {
               return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
           });
 
-    filtered_ = all_;
+    filtered_idx_.reserve(all_.size());
+    for (int i = 0; i < all_.size(); ++i) {
+        filtered_idx_.append(i);
+    }
     endResetModel();
 }
 
 void EntryModel::set_filter(const QString& query) {
-    beginResetModel();
-
     const QString q = query.trimmed();
 
+    if (q == current_filter_) {
+        return;
+    }
+    current_filter_ = q;
+
+    beginResetModel();
+
     if (q.isEmpty()) {
-        filtered_ = all_;
+        filtered_idx_.clear();
+        filtered_idx_.reserve(all_.size());
+        for (int i = 0; i < all_.size(); ++i) {
+            filtered_idx_.append(i);
+        }
         endResetModel();
         return;
     }
 
-    QVector<QPair<double, int>> scored;
-    scored.reserve(all_.size());
+    scored_buf_.clear();
+    scored_buf_.reserve(all_.size());
 
     for (int i = 0; i < all_.size(); ++i) {
         const double s = fuzzy_score_multi(q, all_.at(i).lower_name);
         if (s > -1e8) {
-            scored.append({ s, i });
+            scored_buf_.append({ s, i });
         }
     }
 
-    std::sort(scored.begin(), scored.end(),
+    std::sort(scored_buf_.begin(), scored_buf_.end(),
               [](const QPair<double, int>& a, const QPair<double, int>& b) {
                   return a.first > b.first;
               });
 
-    filtered_.clear();
-    filtered_.reserve(scored.size());
-    for (const auto& pair : scored) {
-        filtered_.append(all_.at(pair.second));
+    filtered_idx_.clear();
+    filtered_idx_.reserve(scored_buf_.size());
+    for (const auto& pair : scored_buf_) {
+        filtered_idx_.append(pair.second);
     }
 
     endResetModel();
 }
 
 bool EntryModel::launch(int row) {
-    if (row < 0 || row >= filtered_.size()) {
+    if (row < 0 || row >= filtered_idx_.size()) {
         return false;
     }
-    const auto& e = filtered_.at(row);
+    const auto& e = all_.at(filtered_idx_.at(row));
 
     if (mode_ == "bookmark") {
         const bool ok = QProcess::startDetached("xdg-open", { e.exec });
@@ -273,8 +282,20 @@ bool EntryModel::launch(int row) {
     }
 
     QString exec = e.exec;
-    static const QRegularExpression field_code(R"(%[fFuUdDnNickvm])");
-    exec.remove(field_code);
+    {
+        QString out;
+        out.reserve(exec.size());
+        static const QString codes = QStringLiteral("fFuUdDnNickvm");
+        for (int i = 0; i < exec.size(); ++i) {
+            if (exec.at(i) == u'%' && i + 1 < exec.size()) {
+                const QChar c = exec.at(i + 1);
+                if (c == u'%') { out += u'%'; ++i; continue; }
+                if (codes.contains(c)) { ++i; continue; }
+            }
+            out += exec.at(i);
+        }
+        exec = std::move(out);
+    }
     QStringList argv = QProcess::splitCommand(exec);
     if (argv.isEmpty()) {
         return false;
@@ -301,11 +322,18 @@ void EntryModel::load_desktop_files() {
         "/usr/share/applications",
     };
 
+    QSet<QString> seen;
+    seen.reserve(512);
+
     for (const auto& dir : dirs) {
         QDir d(dir);
         if (!d.exists()) { continue; }
         const auto files = d.entryList({ "*.desktop" }, QDir::Files);
         for (const auto& file : files) {
+            if (seen.contains(file)) {
+                continue;
+            }
+            seen.insert(file);
             Entry e;
             if (parse_desktop(d.filePath(file), e)) {
                 all_.append(e);
@@ -370,7 +398,6 @@ void EntryModel::load_dotfiles() {
         e.lower_name = name.toLower();
         all_.append(e);
     }
-
 }
 
 bool EntryModel::parse_desktop(const QString& path, Entry& out) {
@@ -434,6 +461,8 @@ bool EntryModel::parse_desktop(const QString& path, Entry& out) {
 }
 
 IconProvider::IconProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {
+    cache_.setMaxCost(4 * 1024);
+
     static const char* const names[] = {
         "application-x-executable",
         "application-x-executable-symbolic",
@@ -459,11 +488,11 @@ QPixmap IconProvider::requestPixmap(const QString& id, QSize* size, const QSize&
     const QSize target = requested.isValid() ? requested : QSize(32, 32);
     const QString key = id + '@' + QString::number(target.width()) + 'x' + QString::number(target.height());
 
-    if (auto it = cache_.find(key); it != cache_.end()) {
+    if (QPixmap* cached = cache_.object(key)) {
         if (size) {
-            *size = it->size();
+            *size = cached->size();
         }
-        return *it;
+        return *cached;
     }
 
     QIcon icon;
@@ -486,6 +515,8 @@ QPixmap IconProvider::requestPixmap(const QString& id, QSize* size, const QSize&
     if (size) {
         *size = pm.size();
     }
-    cache_.insert(key, pm);
+
+    const int cost = qMax(1, pm.width() * pm.height() * pm.depth() / 8 / 1024);
+    cache_.insert(key, new QPixmap(pm), cost);
     return pm;
 }

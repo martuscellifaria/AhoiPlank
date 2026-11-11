@@ -1,5 +1,6 @@
 #pragma once
 #include <QAbstractListModel>
+#include <QCache>
 #include <QHash>
 #include <QString>
 #include <QVector>
@@ -53,8 +54,11 @@ private:
     QString mode_ = QStringLiteral("standard");
     QString text_editor_ = QStringLiteral("vim");
     QString text_editor_terminal_ = QStringLiteral("");
+
     QVector<Entry> all_;
-    QVector<Entry> filtered_;
+    QVector<int>   filtered_idx_;
+    QVector<QPair<double, int>> scored_buf_;
+    QString current_filter_;
 };
 
 
@@ -63,6 +67,6 @@ public:
     IconProvider();
     QPixmap requestPixmap(const QString& id, QSize* size, const QSize& requested) override;
 private:
-    QHash<QString, QPixmap> cache_;
+    QCache<QString, QPixmap> cache_;
     QPixmap fallback_icon_;
 };

@@ -6,7 +6,7 @@ configure_file(
     @ONLY
 )
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Gui QuickControls2)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Gui)
 find_package(LayerShellQt REQUIRED)
 qt_standard_project_setup()
 
@@ -43,10 +43,19 @@ target_link_libraries(ahoicpp_externals_interface INTERFACE ${AHOICPP_EXTERNALS_
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ahoicpp_externals_interface
     Qt6::Quick
-    Qt6::QuickControls2
     Qt6::Gui
     LayerShellQt::Interface
 )
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Release>:-ffunction-sections>
+        $<$<CONFIG:Release>:-fdata-sections>
+    )
+    target_link_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Release>:-Wl,--gc-sections>
+    )
+endif()
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 

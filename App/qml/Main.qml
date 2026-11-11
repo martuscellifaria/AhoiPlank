@@ -121,52 +121,47 @@ Window {
                     radius: theme.radius_item
                     color: ListView.isCurrentItem ? theme.selection : "transparent"
 
-                    RowLayout {
-                        anchors.fill: parent
+                    Image {
+                        id: row_icon
+                        anchors.left: parent.left
                         anchors.leftMargin: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: icon.length > 0 ? "image://icon/" + icon : ""
+                        sourceSize: Qt.size(24, 24)
+                        width: 24
+                        height: 24
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        visible: status === Image.Ready
+                    }
+
+                    Text {
+                        anchors.left: row_icon.right
+                        anchors.leftMargin: 10
+                        anchors.right: parent.right
                         anchors.rightMargin: 12
-                        spacing: 10
+                        anchors.top: parent.top
+                        anchors.topMargin: 6
+                        text: name
+                        color: theme.fg
+                        font.family: theme.font_family
+                        font.pixelSize: theme.font_size_title
+                        elide: Text.ElideRight
+                    }
 
-                        Item {
-                            Layout.preferredWidth: 24
-                            Layout.preferredHeight: 24
-                            Layout.alignment: Qt.AlignVCenter
-
-                            Image {
-                                anchors.centerIn: parent
-                                source: icon.length > 0 ? "image://icon/" + icon : ""
-                                sourceSize: Qt.size(24, 24)
-                                width: 24
-                                height: 24
-                                fillMode: Image.PreserveAspectFit
-                                smooth: true
-                                visible: status === Image.Ready
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.alignment: Qt.AlignVCenter
-                            spacing: 0
-
-                            Text {
-                                Layout.fillWidth: true
-                                text: parent.parent.parent.name
-                                color: theme.fg
-                                font.family: theme.font_family
-                                font.pixelSize: theme.font_size_title
-                                elide: Text.ElideRight
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                text: parent.parent.parent.comment
-                                color: theme.fg_dim
-                                font.family: theme.font_family
-                                font.pixelSize: theme.font_size_comment
-                                elide: Text.ElideRight
-                                visible: text.length > 0
-                            }
-                        }
+                    Text {
+                        anchors.left: row_icon.right
+                        anchors.leftMargin: 10
+                        anchors.right: parent.right
+                        anchors.rightMargin: 12
+                        anchors.top: parent.top
+                        anchors.topMargin: 6 + theme.font_size_title + 2
+                        text: comment
+                        color: theme.fg_dim
+                        font.family: theme.font_family
+                        font.pixelSize: theme.font_size_comment
+                        elide: Text.ElideRight
+                        visible: text.length > 0
                     }
 
                     MouseArea {

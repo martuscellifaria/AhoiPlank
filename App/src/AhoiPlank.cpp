@@ -15,7 +15,9 @@
 #include <QLocalSocket>
 #include <QDebug>
 #include <QQuickWindow>
-#include <QQuickStyle>
+#include <QFileSystemWatcher>
+#include <QStandardPaths>
+#include <QIcon>
 #include <LayerShellQt/Window>
 #include <LayerShellQt/Shell>
 #include <print>
@@ -34,7 +36,13 @@ static bool try_send_command(const char* cmd) {
         return false;
     }
     sock.write(cmd);
-    sock.waitForBytesWritten(500);
+    if (!sock.waitForBytesWritten(500)) {
+        return false;
+    }
+    sock.disconnectFromServer();
+    if (sock.state() != QLocalSocket::UnconnectedState) {
+        sock.waitForDisconnected(200);
+    }
     return true;
 }
 
@@ -44,7 +52,6 @@ int main(int argc, char* argv[]) {
     bool daemon_stop = false;
     bool cold_show = false;
     QString mode = "standard";
-    QIcon::setThemeName(QStringLiteral("Adwaita"));
     if (argc > 1) {
         const QString arg = QString::fromLocal8Bit(argv[1]);
         if (arg == "--version") {
@@ -148,7 +155,7 @@ int main(int argc, char* argv[]) {
 
     QGuiApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
-    QQuickStyle::setStyle("Basic");
+    QIcon::setThemeName(QStringLiteral("Adwaita"));
 
     QLocalServer::removeServer(k_socket_name);
     QLocalServer server;
@@ -226,16 +233,27 @@ int main(int argc, char* argv[]) {
 
     QTimer::singleShot(0, win, apply_margins);
 
+    QFileSystemWatcher config_watcher;
+    const QString config_file =
+        QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+        + "/ahoiplank/config.json";
+    config_watcher.addPath(config_file);
+    QObject::connect(&config_watcher, &QFileSystemWatcher::fileChanged,
+                     &general_config, [&](const QString& path) {
+        if (!config_watcher.files().contains(path) && QFile::exists(path)) {
+            config_watcher.addPath(path);
+        }
+        general_config.reload();
+    });
+
     auto toggle = [&]() {
         const bool show = !win->isVisible();
         if (show) {
-            general_config.reload();
             controller.set_text_editor(general_config.text_editor());
             controller.set_text_editor_terminal(general_config.text_editor_terminal());
-            controller.reload();
             apply_margins();
-            controller.set_filter(QStringLiteral(""));
             controller.request_reset();
+            controller.set_filter(QStringLiteral(""));
             win->show();
             win->requestActivate();
         }
@@ -251,8 +269,16 @@ int main(int argc, char* argv[]) {
 
     QObject::connect(&server, &QLocalServer::newConnection, [&]() {
         while (auto* c = server.nextPendingConnection()) {
-            QObject::connect(c, &QLocalSocket::readyRead, [c, &toggle, &quit, &controller]() {
+            QTimer::singleShot(2000, c, [c]() {
+                if (c->state() != QLocalSocket::UnconnectedState) {
+                    c->abort();
+                }
+            });
+            QObject::connect(c, &QLocalSocket::readyRead, c, [c, &toggle, &quit, &controller]() {
                 const QByteArray msg = c->readAll().trimmed();
+                if (msg.isEmpty()) {
+                    return;
+                }
                 if (msg.startsWith("toggle")) {
                     if (msg.size() > 6 && msg.at(6) == ':') {
                         controller.set_mode(QString::fromUtf8(msg.mid(7)));
