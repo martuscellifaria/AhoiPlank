@@ -39,7 +39,7 @@ sudo apt install qt6-base-dev qt6-declarative-dev qt6-wayland libqt6svg6-dev lib
 
 ### Build with `build.py`
 
-The `build.py` script drives CMake. You will get prompted to a menu, so you can set your build to release, debug, add a version and so on.
+The `build.py` script drives CMake. You will get prompted to a menu, so you can set your build to release, debug, tests, add a version and so on.
 
 ```bash
 python3 build.py
@@ -50,29 +50,34 @@ Binaries land in `build/App/AhoiPlank`.
 ## Devcontainer
 
 The devcontainer provides a ready-to-use environment with Qt 6, LayerShellQt, and a C++23 compiler. No host dependencies beyond Docker.
-This is still under construction and may not work right. It compiles, but sometimes has some incompatibilities of .so files. I am working on it.
-
-### Requirements
-
-Docker with BuildKit (or `docker buildx`). No other host dependencies — the container provides the toolchains.
+The only thing I had to do was to split the Dockerfiles in Dockerfile.ubuntu and Dockerfile.arch due to some Qt 6 compatibility issues across distros.
+Long story short, you only need Docker.
 
 ### Build the devcontainer and enter it
 
 ```bash
-sh start_devcontainer.sh
+sh start_devcontainer.sh arch
 ```
 
-This builds the `ahoiplank-dev` image for your host architecture and drops you into a shell inside it. The image build takes about 2 minutes on first run and is cached afterward.
+or:
+
+```bash
+sh start_devcontainer.sh ubuntu
+```
+
+Without the flag, it defaults to Ubuntu.
+
+This builds the `ahoiplank-dev-<distro>:<architecture>` image for your host architecture and drops you into a shell inside it. The image build takes about 2 minutes on first run and is cached afterward.
 
 ### Build AhoiPlank inside the devcontainer
 
 From inside the container:
 
 ```bash
-cd /workspace
 python3 build.py
 ```
 
+The instructions for native build also apply here.
 The binary lands at `/workspace/build/App/AhoiPlank`, which is your project directory mounted from the host.
 
 ## Running the launcher
@@ -211,5 +216,10 @@ The following does the trick.
 ```bash
 cp -r dotfiles/ahoiplank ~/.config
 ```
+
+## Tests
+
+I added some unit tests for the EntryModel class and will be adding more in the near future as the project grows.
+Running is also straightforward. You can use the `build.py` script and pick an option that contains tests. It will run at the end.
 
 That's it and thanks for using!
