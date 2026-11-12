@@ -76,8 +76,8 @@ void GeneralConfig::reload() {
     QColor bg_input   { QStringLiteral("#1a1b26") };
     QColor fg         { QStringLiteral("#c0caf5") };
     QColor fg_dim     { QStringLiteral("#a9b1d6") };
-    QColor border     { QStringLiteral("#7dcfff66") };
-    QColor selection  { QStringLiteral("#7aa2f724") };
+    QColor border     { QStringLiteral("#667dcfff") };
+    QColor selection  { QStringLiteral("#247aa2f7") };
     QColor accent     { QStringLiteral("#f7768e") };
 
     QString font_family       { QStringLiteral("monospace") };

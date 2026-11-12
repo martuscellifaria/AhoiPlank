@@ -13,8 +13,16 @@ case "$ARCH" in
     *) echo "Unsupported host arch: $ARCH"; exit 1 ;;
 esac
 
-IMAGE="ahoiplank-dev:${ARCH}"
-docker build -t "$IMAGE" .
+DISTRO="${1:-ubuntu}"
+case "$DISTRO" in
+    ubuntu) DOCKERFILE="Dockerfile.ubuntu" ;;
+    arch)   DOCKERFILE="Dockerfile.arch"   ;;
+    *) echo "Usage: $0 {ubuntu|arch}"; exit 1 ;;
+esac
+
+IMAGE="ahoiplank-dev-${DISTRO}:${ARCH}"
+docker build -f "$DOCKERFILE" -t "$IMAGE" .
+
 docker run -it --rm \
     -v "$(pwd):/workspace" \
     -w /workspace \

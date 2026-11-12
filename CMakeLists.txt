@@ -49,3 +49,10 @@ foreach(PATH ${AHOICPP_EXTERNALS_INCLUDE_PATHS})
     endif()
 endforeach()
 add_subdirectory(App)
+
+option(BUILD_TESTING "Build tests" OFF)
+
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(Tests)
+endif()

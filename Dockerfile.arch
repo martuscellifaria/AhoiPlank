@@ -1,0 +1,20 @@
+FROM archlinux:latest
+
+RUN pacman -Sy --noconfirm archlinux-keyring \
+ && pacman -Syu --noconfirm --needed \
+        base-devel ca-certificates cmake ninja git pkgconf \
+        gcc unzip wget curl xz file python perl \
+        qt6-base qt6-declarative qt6-wayland qt6-svg \
+        layer-shell-qt \
+        wayland wayland-protocols wayland-utils \
+        libxkbcommon fontconfig freetype2 libpng libjpeg-turbo \
+        mesa glu glib2 \
+        extra-cmake-modules sudo \
+ && pacman -Scc --noconfirm
+
+RUN useradd -m -U arch \
+ && echo 'arch ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/arch \
+ && chmod 0440 /etc/sudoers.d/arch
+
+WORKDIR /workspace
+CMD ["/bin/bash"]

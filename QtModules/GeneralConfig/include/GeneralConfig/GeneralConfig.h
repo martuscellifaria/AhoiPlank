@@ -68,8 +68,8 @@ private:
     QColor bg_input_  { QStringLiteral("#1a1b26") };
     QColor fg_        { QStringLiteral("#c0caf5") };
     QColor fg_dim_    { QStringLiteral("#a9b1d6") };
-    QColor border_    { QStringLiteral("#7dcfff66") };
-    QColor selection_ { QStringLiteral("#7aa2f724") };
+    QColor border_    { QStringLiteral("#667dcfff") };
+    QColor selection_ { QStringLiteral("#247aa2f7") };
     QColor accent_    { QStringLiteral("#f7768e") };
 
     QString font_family_       { QStringLiteral("monospace") };

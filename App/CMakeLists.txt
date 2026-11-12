@@ -59,18 +59,9 @@ endif()
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
-if(WIN32)
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in
-        ${CMAKE_CURRENT_SOURCE_DIR}/version.rc
-        @ONLY
-    )
-    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.rc)
-else()
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/version.c.in
-        ${CMAKE_CURRENT_SOURCE_DIR}/version.c
-        @ONLY
-    )
-    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.c)
-endif()
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.c.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.c
+    @ONLY
+)
+target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/version.c)

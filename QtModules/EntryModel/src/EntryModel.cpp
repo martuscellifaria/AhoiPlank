@@ -13,6 +13,7 @@
 #include <QSet>
 #include <algorithm>
 #include <print>
+#include <qstandardpaths.h>
 
 namespace {
 
@@ -316,11 +317,8 @@ void EntryModel::dismiss() {
 }
 
 void EntryModel::load_desktop_files() {
-    const QStringList dirs = {
-        QDir::homePath() + "/.local/share/applications",
-        "/usr/local/share/applications",
-        "/usr/share/applications",
-    };
+    const QStringList dirs = QStandardPaths::standardLocations(
+            QStandardPaths::ApplicationsLocation);
 
     QSet<QString> seen;
     seen.reserve(512);
