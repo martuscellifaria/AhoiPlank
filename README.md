@@ -8,12 +8,12 @@ Its features are:
 - bookmark mode for opening bookmarks on the browser
 - dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor.
 
-`ahoiplank` has also a daemon.
+`AhoiPlank` has also a daemon.
 
-Currently `AhoiPlank` looks like:
 ![AhoiPlank window](resources/ahoiplank-window.png)
 
-Currently tested on `sway` and `hyprland`, but should work on other Wayland wms as well.
+Currently tested on `sway` and `hyprland`, but should work on other Wayland compositors as well.
+Distros tested were Ubuntu 26.04 and Arch Linux, both on x86_64 and aarch64.
 
 ## How to build
 
@@ -51,7 +51,6 @@ Binaries land in `build/App/AhoiPlank`.
 
 The devcontainer provides a ready-to-use environment with Qt 6, LayerShellQt, and a C++23 compiler. No host dependencies beyond Docker.
 The only thing I had to do was to split the Dockerfiles in Dockerfile.ubuntu and Dockerfile.arch due to some Qt 6 compatibility issues across distros.
-Long story short, you only need Docker.
 
 ### Build the devcontainer and enter it
 
@@ -68,6 +67,8 @@ sh start_devcontainer.sh ubuntu
 Without the flag, it defaults to Ubuntu.
 
 This builds the `ahoiplank-dev-<distro>:<architecture>` image for your host architecture and drops you into a shell inside it. The image build takes about 2 minutes on first run and is cached afterward.
+
+[!NOTE] There is no official Arch Linux on aarch64, so if you want to build using a devcontainer, and then deploy on your Arch Linux on aarch64, you should use the Ubuntu image. This sounds and reads confusing, but is how it works :).
 
 ### Build AhoiPlank inside the devcontainer
 
@@ -90,7 +91,7 @@ cd build/App
 ./AhoiPlank
 ```
 
-A vertical list of applications will popup and you can fuzzy find and start your on the current workspace you are into.
+A vertical list of applications will popup and you can fuzzy find and start it on the current workspace you are into.
 
 ## Customizing
 
@@ -178,13 +179,13 @@ And then it will open on your default browser.
 ahoiplank --dotfiles
 ```
 
-It will read all directories inside `~/.config`. You will then be able to browse your dotfiles from `ahoiplank` in your own terminal and editor. These are set in the `config.json` file.
+It will read all directories inside `~/.config`. You will then be able to browse your dotfiles from in your own terminal and editor. These are set in the `config.json` file.
 
 ![AhoiPlank dotfiles mode](resources/ahoiplank-dotfiles-window.png)
 
 ## Running the daemon on background
 
-You are also able to run `ahoiplank` on the background by starting with:
+You are also able to run `AhoiPlank` on the background by starting with:
 
 ```bash
 ahoiplank --start-daemon
