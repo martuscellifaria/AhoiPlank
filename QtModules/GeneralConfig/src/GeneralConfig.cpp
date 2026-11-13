@@ -92,7 +92,7 @@ void GeneralConfig::reload() {
     int screen_height { 420 };
     QString vertical_position = "center";
     QString text_editor = "vim";
-    QString text_editor_terminal = "";
+    QString terminal = "";
 
     QFile f(config_path());
     if (f.open(QIODevice::ReadOnly)) {
@@ -110,7 +110,7 @@ void GeneralConfig::reload() {
             accent = color_or(colors, "accent", accent);
 
             text_editor = string_or(root, "text_editor", text_editor);
-            text_editor_terminal = string_or(root, "text_editor_terminal", text_editor_terminal);
+            terminal = string_or(root, "terminal", terminal);
 
             font_family = string_or(style, "font_family", font_family);
             font_size_search = int_or(style, "font_size_search", font_size_search);
@@ -154,7 +154,7 @@ void GeneralConfig::reload() {
     vertical_position_ = vertical_position;
 
     text_editor_ = text_editor;
-    text_editor_terminal_ = text_editor_terminal;
+    terminal_ = terminal;
 
     emit changed();
 }

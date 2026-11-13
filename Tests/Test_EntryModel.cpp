@@ -1,12 +1,8 @@
 #include <QtTest/QtTest>
 #include <QTemporaryDir>
-#include <QStandardPaths>
 #include <QFile>
+#include <QFileInfo>
 #include <QDir>
-#include <qdir.h>
-#include <qlogging.h>
-#include <qstandardpaths.h>
-#include <qtenvironmentvariables.h>
 #include "EntryModel.h"
 
 class TestEntryModel : public QObject {
@@ -42,10 +38,25 @@ private slots:
 
         qputenv("XDG_DATA_HOME", temp_dir_->path().toUtf8());
         qputenv("XDG_DATA_DIRS", temp_dir_->path().toUtf8());
+        qputenv("XDG_CONFIG_HOME", temp_dir_->path().toUtf8());
     }
 
     void init() {
         model_ = std::make_unique<EntryModel>();
+    }
+
+    void cleanup() {
+        model_.reset();
+        if (temp_dir_ && temp_dir_->isValid()) {
+            QFile::remove(ssh_config_path());
+        }
+        qunsetenv("TERMINAL");
+    }
+
+    void cleanupTestCase() {
+        qunsetenv("XDG_DATA_HOME");
+        qunsetenv("XDG_DATA_DIRS");
+        qunsetenv("XDG_CONFIG_HOME");
     }
 
     void rowCount_matchesExpectedEntries() {
@@ -126,29 +137,240 @@ private slots:
     }
 
     void mode_standardIsDefault() {
-        QCOMPARE(model_->mode(), QStringLiteral("standard"));
+        QCOMPARE(model_->mode(), EntryModel::Mode::Standard);
     }
 
     void mode_setModeChangesMode() {
-        model_->set_mode(QStringLiteral("bookmark"));
-        QCOMPARE(model_->mode(), QStringLiteral("bookmark"));
-        model_->set_mode(QStringLiteral("standard"));
-        QCOMPARE(model_->mode(), QStringLiteral("standard"));
+        model_->set_mode(EntryModel::Mode::Bookmarks);
+        QCOMPARE(model_->mode(), EntryModel::Mode::Bookmarks);
+        model_->set_mode(EntryModel::Mode::Standard);
+        QCOMPARE(model_->mode(), EntryModel::Mode::Standard);
     }
 
     void mode_switchingDoesNotCrash() {
-        model_->set_mode(QStringLiteral("bookmark"));
-        model_->set_mode(QStringLiteral("dotfiles"));
-        model_->set_mode(QStringLiteral("standard"));
+        model_->set_mode(EntryModel::Mode::Bookmarks);
+        model_->set_mode(EntryModel::Mode::Dotfiles);
+        model_->set_mode(EntryModel::Mode::Standard);
         QVERIFY(model_->rowCount() >= 0);
     }
 
     void mode_sameModeIsNoOp() {
-        model_->set_mode(QStringLiteral("standard"));
+        model_->set_mode(EntryModel::Mode::Standard);
         QCOMPARE(model_->rowCount(), 3);
     }
 
+    void ssh_setModeChangesMode() {
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->mode(), EntryModel::Mode::SSH);
+    }
+
+    void ssh_missingConfigIsEmpty() {
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void ssh_malformedConfigIsEmpty() {
+        write_file(ssh_config_path(), "{ this is not json");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void ssh_emptyArrayIsEmpty() {
+        write_file(ssh_config_path(), R"({"ssh":[]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void ssh_loadsEntries() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod","user":"alice","host":"prod.example.com"},
+                       {"name":"Staging","user":"bob","host":"staging.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 2);
+    }
+
+    void ssh_entryRolesArePopulated() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod","user":"alice","host":"prod.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 1);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Prod"));
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 2).toString(),
+                 QStringLiteral("alice@prod.example.com"));
+    }
+
+    void ssh_defaultIconWhenMissing() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod","user":"alice","host":"prod.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 4).toString(),
+                 QStringLiteral("network-server"));
+    }
+
+    void ssh_customIconIsKept() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod","user":"alice","host":"prod.example.com","icon":"utilities-terminal"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 4).toString(),
+                 QStringLiteral("utilities-terminal"));
+    }
+
+    void ssh_skipsEntriesWithEmptyName() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"","user":"alice","host":"prod.example.com"},
+                       {"user":"alice","host":"prod.example.com"},
+                       {"name":"Good","user":"alice","host":"good.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 1);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Good"));
+    }
+
+    void ssh_entriesAreSortedCaseInsensitively() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"zulu","user":"u","host":"z.example.com"},
+                       {"name":"Alpha","user":"u","host":"a.example.com"},
+                       {"name":"mike","user":"u","host":"m.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 3);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Alpha"));
+        QCOMPARE(model_->data(model_->index(1), Qt::UserRole + 1).toString(),
+                 QStringLiteral("mike"));
+        QCOMPARE(model_->data(model_->index(2), Qt::UserRole + 1).toString(),
+                 QStringLiteral("zulu"));
+    }
+
+    void ssh_filterMatchesByName() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod","user":"alice","host":"prod.example.com"},
+                       {"name":"Staging","user":"bob","host":"staging.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter(QStringLiteral("prod"));
+        QCOMPARE(model_->rowCount(), 1);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Prod"));
+    }
+
+    void ssh_filterNoMatchReturnsZero() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod","user":"alice","host":"prod.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter(QStringLiteral("zzzzzzzz"));
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void ssh_switchingAwayAndBackReloads() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod","user":"alice","host":"prod.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 1);
+        model_->set_mode(EntryModel::Mode::Standard);
+        QCOMPARE(model_->rowCount(), 3);
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 1);
+    }
+
+    void ssh_launchInvalidRowReturnsFalse() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod","user":"alice","host":"prod.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->launch(-1), false);
+        QCOMPARE(model_->launch(model_->rowCount()), false);
+    }
+
+    void shellQuote_plainStringIsWrapped() {
+        QCOMPARE(TerminalLauncher::shell_quote("hello"),
+                 QStringLiteral("'hello'"));
+    }
+
+    void shellQuote_escapesSingleQuotes() {
+        QCOMPARE(TerminalLauncher::shell_quote("a'b"),
+                 QStringLiteral("'a'\\''b'"));
+    }
+
+    void shellQuote_emptyIsTwoQuotes() {
+        QCOMPARE(TerminalLauncher::shell_quote(""),
+                 QStringLiteral("''"));
+    }
+
+    void shellQuote_metacharsStayQuoted() {
+        QCOMPARE(TerminalLauncher::shell_quote("a;b$c`d\"e\\f\ng"),
+                 QStringLiteral("'a;b$c`d\"e\\f\ng'"));
+    }
+
+    void shellQuote_multipleQuotesAreEscaped() {
+        QCOMPARE(TerminalLauncher::shell_quote("it's a 'test'"),
+                 QStringLiteral("'it'\\''s a '\\''test'\\'''"));
+    }
+
+    void findTerminal_prefersConfigured() {
+        QCOMPARE(TerminalLauncher::find_terminal("foot"),
+                 QStringLiteral("foot"));
+    }
+
+    void findTerminal_configuredWinsOverEnv() {
+        qputenv("TERMINAL", "kitty");
+        QCOMPARE(TerminalLauncher::find_terminal("alacritty"),
+                 QStringLiteral("alacritty"));
+    }
+
+    void findTerminal_fallsBackToEnv() {
+        qputenv("TERMINAL", "wezterm");
+        QCOMPARE(TerminalLauncher::find_terminal({}),
+                 QStringLiteral("wezterm"));
+    }
+
 private:
+    QString ssh_config_path() const {
+        Q_ASSERT(temp_dir_ && temp_dir_->isValid());
+        return temp_dir_->path() + "/ahoiplank/ssh.json";
+    }
+
+    void write_file(const QString& path, const QByteArray& content) {
+        QVERIFY(temp_dir_ && temp_dir_->isValid());
+        QVERIFY2(path.startsWith(temp_dir_->path()),
+                 qPrintable(QStringLiteral("refusing to write outside temp dir: ") + path));
+        QVERIFY(QDir().mkpath(QFileInfo(path).absolutePath()));
+        QFile f(path);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write(content);
+        f.close();
+    }
+
     static void write_desktop(const QString& path,
                               const QString& name,
                               const QString& exec,

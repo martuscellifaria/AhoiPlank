@@ -5,7 +5,7 @@ A minimal and customizable Wayland launcher built with Qt 6 and QML, bootstrappe
 Its features are:
 - fuzzy search
 - standard mode for launching desktop applications
-- bookmark mode for opening bookmarks on the browser
+- bookmarks mode for opening bookmarks on the browser
 - dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor.
 
 `AhoiPlank` has also a daemon.
@@ -68,7 +68,8 @@ Without the flag, it defaults to Ubuntu.
 
 This builds the `ahoiplank-dev-<distro>:<architecture>` image for your host architecture and drops you into a shell inside it. The image build takes about 2 minutes on first run and is cached afterward.
 
-[!NOTE] There is no official Arch Linux on aarch64, so if you want to build using a devcontainer, and then deploy on your Arch Linux on aarch64, you should use the Ubuntu image. This sounds and reads confusing, but is how it works :).
+> [!NOTE]
+> There is no official Arch Linux on aarch64, so if you want to build using a devcontainer, and then deploy on your Arch Linux on aarch64, you should use the Ubuntu image. This sounds and reads confusing, but is how it works :).
 
 ### Build AhoiPlank inside the devcontainer
 
@@ -143,10 +144,10 @@ Then you will be able to run it with `ahoiplank` from your terminal or add it to
 
 Besides the standard desktop launcher mode, `ahoiplank` can also be launched in the following modes:
 
-### Bookmark
+### Bookmarks
 
 ```bash
-ahoiplank --bookmark
+ahoiplank --bookmarks
 ```
 
 It will read from `~/.config/ahoiplank/bookmarks.json`. For example:
@@ -169,7 +170,7 @@ It will read from `~/.config/ahoiplank/bookmarks.json`. For example:
 ```
 Then:
 
-![AhoiPlank bookmark mode](resources/ahoiplank-bookmark-window.png)
+![AhoiPlank bookmarks mode](resources/ahoiplank-bookmarks-window.png)
 
 And then it will open on your default browser.
 

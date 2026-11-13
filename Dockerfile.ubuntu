@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxkbcommon-dev libfontconfig1-dev libfreetype-dev libpng-dev \
     libjpeg-turbo8-dev libgl1-mesa-dev libglu1-mesa-dev libglib2.0-dev \
     extra-cmake-modules sudo \
+    libxcb-cursor0 libxcb-xinerama0 libxcb-icccm4 libxcb-image0 \
+    libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xkb1 \
+    libxkbcommon-x11-0 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 \
@@ -19,6 +22,8 @@ RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 \
 
 RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu \
     && chmod 0440 /etc/sudoers.d/ubuntu
+
+ENV QT_QPA_PLATFORM=offscreen
 
 WORKDIR /workspace
 CMD ["/bin/bash"]

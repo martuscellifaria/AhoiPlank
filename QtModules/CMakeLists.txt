@@ -1,2 +1,3 @@
 add_subdirectory(EntryModel)
 add_subdirectory(GeneralConfig)
+add_subdirectory(IconProvider)

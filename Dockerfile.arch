@@ -7,14 +7,18 @@ RUN pacman -Sy --noconfirm archlinux-keyring \
         qt6-base qt6-declarative qt6-wayland qt6-svg \
         layer-shell-qt \
         wayland wayland-protocols wayland-utils \
-        libxkbcommon fontconfig freetype2 libpng libjpeg-turbo \
+        libxkbcommon libxkbcommon-x11 fontconfig freetype2 libpng libjpeg-turbo \
         mesa glu glib2 \
+        xcb-util-cursor xcb-util-wm xcb-util-image xcb-util-keysyms \
+        xcb-util-renderutil libxcb libxinerama \
         extra-cmake-modules sudo \
  && pacman -Scc --noconfirm
 
 RUN useradd -m -U arch \
  && echo 'arch ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/arch \
  && chmod 0440 /etc/sudoers.d/arch
+
+ENV QT_QPA_PLATFORM=offscreen
 
 WORKDIR /workspace
 CMD ["/bin/bash"]

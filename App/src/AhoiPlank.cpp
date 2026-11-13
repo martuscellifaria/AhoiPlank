@@ -1,5 +1,6 @@
 #include "version.h"
 #include "EntryModel.h"
+#include "IconProvider.h"
 #include "GeneralConfig.h"
 #include <QFile>
 #include <QDir>
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
     bool daemon_start = false;
     bool daemon_stop = false;
     bool cold_show = false;
-    QString mode = "standard";
+    EntryModel::Mode mode = EntryModel::Mode::Standard;
     if (argc > 1) {
         const QString arg = QString::fromLocal8Bit(argv[1]);
         if (arg == "--version") {
@@ -77,10 +78,12 @@ int main(int argc, char* argv[]) {
                     "\tStarts AhoiPlank daemon in background to better user feel.\n\n"
                     "    --daemon-stop\n"
                     "\tStops AhoiPlank daemon.\n\n"
-                    "    --bookmark\n"
-                    "\tOpens the launcher in bookmark mode.\n\n"
+                    "    --bookmarks\n"
+                    "\tOpens the launcher in bookmarks mode.\n\n"
                     "    --dotfiles\n"
                     "\tOpens the launcher in dotfiles mode.\n\n"
+                    "    --ssh\n"
+                    "\tOpens the launcher in ssh mode.\n\n"
                     "    --version\n"
                     "\tShows version metadata.\n\n"
                     "    --help\n"
@@ -93,11 +96,14 @@ int main(int argc, char* argv[]) {
         else if (arg == "--daemon-start") {
             daemon_start = true;
         }
-        else if (arg == "--bookmark") {
-            mode = "bookmark";
+        else if (arg == "--bookmarks") {
+            mode = EntryModel::Mode::Bookmarks;
         }
         else if (arg == "--dotfiles") {
-            mode = "dotfiles";
+            mode = EntryModel::Mode::Dotfiles;
+        }
+        else if (arg == "--ssh") {
+            mode = EntryModel::Mode::SSH;
         }
     }
 
@@ -122,7 +128,7 @@ int main(int argc, char* argv[]) {
         }
     }
     else {
-        const QByteArray cmd = QByteArray("toggle:") + mode.toUtf8();
+        const QByteArray cmd = "toggle:" + EntryModel::mode_to_string(mode).toUtf8();
         if (try_send_command(cmd.constData())) {
             return 0;
         }
@@ -270,7 +276,7 @@ int main(int argc, char* argv[]) {
         const bool show = !win->isVisible();
         if (show) {
             controller.set_text_editor(general_config.text_editor());
-            controller.set_text_editor_terminal(general_config.text_editor_terminal());
+            controller.set_terminal(general_config.terminal());
             apply_margins();
             controller.request_reset();
             controller.set_filter(QStringLiteral(""));
@@ -300,12 +306,11 @@ int main(int argc, char* argv[]) {
                     return;
                 }
                 if (msg.startsWith("toggle")) {
+                EntryModel::Mode m = EntryModel::Mode::Standard;
                     if (msg.size() > 6 && msg.at(6) == ':') {
-                        controller.set_mode(QString::fromUtf8(msg.mid(7)));
+                        m = EntryModel::mode_from_string(QString::fromUtf8(msg.mid(7)));
                     }
-                    else {
-                        controller.set_mode(QStringLiteral("standard"));
-                    }
+                    controller.set_mode(m);
                     toggle();
                 }
                 else if (msg == "ping") {
@@ -323,7 +328,7 @@ int main(int argc, char* argv[]) {
     if (cold_show) {
         controller.set_mode(mode);
         controller.set_text_editor(general_config.text_editor());
-        controller.set_text_editor_terminal(general_config.text_editor_terminal());
+        controller.set_terminal(general_config.terminal());
         controller.set_filter(QStringLiteral(""));
         controller.request_reset();
         win->show();

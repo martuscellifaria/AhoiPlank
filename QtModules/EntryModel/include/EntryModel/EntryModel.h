@@ -1,17 +1,105 @@
 #pragma once
 #include <QAbstractListModel>
-#include <QCache>
 #include <QHash>
 #include <QString>
+#include <QStringView>
 #include <QVector>
-#include <QQuickImageProvider>
-#include <qhashfunctions.h>
+#include <QProcess>
+#include <QStandardPaths>
+#include <cstdint>
 
+namespace TerminalLauncher {
+
+inline QString find_terminal(const QString& configured = {}) {
+    if (!configured.isEmpty()) {
+        return configured;
+    }
+    if (const QString env = qEnvironmentVariable("TERMINAL"); !env.isEmpty()) {
+        return env;
+    }
+    static const char* const candidates[] = {
+        "alacritty", "foot", "kitty", "wezterm", "ghostty",
+        "konsole", "gnome-terminal", "xfce4-terminal", "xterm",
+        nullptr,
+    };
+    for (const char* const* c = candidates; *c; ++c) {
+        const QString name = QString::fromLatin1(*c);
+        if (!QStandardPaths::findExecutable(name).isEmpty()) {
+            return name;
+        }
+    }
+    return {};
+}
+
+inline QString shell_quote(const QString& s) {
+    if (s.isEmpty()) {
+        return QStringLiteral("''");
+    }
+    QString out;
+    out.reserve(s.size() + 2);
+    out += u'\'';
+    for (const QChar c : s) {
+        if (c == u'\'') {
+            out += QStringLiteral("'\\''");
+        }
+        else {
+            out += c;
+        }
+    }
+    out += u'\'';
+    return out;
+}
+
+inline QStringList terminal_flags(const QString& terminal) {
+    if (terminal.endsWith("gnome-terminal")) {
+        return { "--" };
+    }
+    if (terminal.endsWith("wezterm")) {
+        return { "start", "--" };
+    }
+    if (terminal.endsWith("xfce4-terminal")) {
+        return { "-x" };
+    }
+    return { "-e" };
+}
+
+inline bool run_in_terminal_argv(const QString& terminal,
+                                 const QStringList& argv) {
+    QStringList args = terminal_flags(terminal);
+    args += argv;
+    return QProcess::startDetached(terminal, args);
+}
+
+} // namespace TerminalLauncher
 
 class EntryModel : public QAbstractListModel {
     Q_OBJECT
 
 public:
+    enum class Mode : std::uint8_t {
+        Standard,
+        Bookmarks,
+        Dotfiles,
+        SSH
+    };
+
+    static inline QString mode_to_string(Mode m) {
+        switch (m) {
+            case Mode::Standard:  return QStringLiteral("standard");
+            case Mode::Bookmarks: return QStringLiteral("bookmark");
+            case Mode::Dotfiles:  return QStringLiteral("dotfiles");
+            case Mode::SSH:       return QStringLiteral("ssh");
+        }
+        return QStringLiteral("standard");
+    }
+
+    static inline Mode mode_from_string(QStringView s) {
+        if (s == u"bookmark" || s == u"bookmarks") { return Mode::Bookmarks; }
+        if (s == u"dotfiles") { return Mode::Dotfiles; }
+        if (s == u"ssh") { return Mode::SSH; }
+        return Mode::Standard;
+    }
+
     explicit EntryModel(QObject* parent = nullptr);
 
     int rowCount(const QModelIndex& parent = {}) const override;
@@ -22,14 +110,13 @@ public:
     Q_INVOKABLE bool launch(int row);
     Q_INVOKABLE void quit();
     Q_INVOKABLE void dismiss();
-    Q_INVOKABLE void set_mode(const QString& mode);
+    Q_INVOKABLE void set_mode(const Mode& mode);
     Q_INVOKABLE void reload();
 
-    QString mode() const { return mode_; }
-
+    Mode mode() const { return mode_; }
     void request_reset();
     void set_text_editor(const QString& editor) { text_editor_ = editor; }
-    void set_text_editor_terminal(const QString& terminal) { text_editor_terminal_ = terminal; }
+    void set_terminal(const QString& terminal) { terminal_ = terminal; }
 
 signals:
     void dismissed();
@@ -40,6 +127,7 @@ private:
     void load_desktop_files();
     void load_bookmarks();
     void load_dotfiles();
+    void load_ssh();
     void rebuild();
 
     struct Entry {
@@ -51,22 +139,18 @@ private:
     };
     static bool parse_desktop(const QString& path, Entry& out);
 
-    QString mode_ = QStringLiteral("standard");
+    bool launch_standard(const Entry& entry);
+    bool launch_bookmark(const Entry& entry);
+    bool launch_dotfile(const Entry& entry);
+    bool launch_ssh(const Entry& entry);
+
+    Mode mode_ = Mode::Standard;
     QString text_editor_ = QStringLiteral("vim");
-    QString text_editor_terminal_ = QStringLiteral("");
+    QString terminal_ = QStringLiteral("");
 
     QVector<Entry> all_;
     QVector<int>   filtered_idx_;
     QVector<QPair<double, int>> scored_buf_;
     QString current_filter_;
-};
 
-
-class IconProvider : public QQuickImageProvider {
-public:
-    IconProvider();
-    QPixmap requestPixmap(const QString& id, QSize* size, const QSize& requested) override;
-private:
-    QCache<QString, QPixmap> cache_;
-    QPixmap fallback_icon_;
 };

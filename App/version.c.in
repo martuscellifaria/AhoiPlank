@@ -2,4 +2,6 @@ const char* embedded_version =
     "@PROJECT_NAME@ version: @VERSION@\n"
     "Build type: @CMAKE_BUILD_TYPE@\n"
     "Copyright: @COPYRIGHT@\n"
-    "Company: @COMPANY@";
+    "Company: @COMPANY@\n"
+    "Git hash: @GIT_HASH_SHORT@@GIT_DIRTY@\n"
+    "Git branch: @GIT_BRANCH@";

@@ -2,3 +2,5 @@
 target_link_libraries(${PROJECT_NAME} PRIVATE EntryModel)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE GeneralConfig)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE IconProvider)

@@ -1,0 +1,11 @@
+{
+  "ssh": [
+    { 
+        "name": "AlexRemote", 
+        "host": "localhost",
+	"user": "alex",
+        "icon": "network-server"
+    }
+  ]
+}
+
