@@ -237,7 +237,7 @@ ahoiplank --version
 ahoiplank --help
 ```
 
-## Dotfiles
+## Config Dotfiles
 
 This repo also contains my two example dotfiles. They are located at the `dotfiles/` directory, relative to the root of the repo once cloned.
 The following does the trick.
