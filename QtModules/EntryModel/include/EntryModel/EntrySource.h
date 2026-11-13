@@ -1,17 +1,3 @@
-// #pragma once
-// #include "Entry.h"
-// #include <QVector>
-//
-// class EntrySource {
-// public:
-//     EntrySource() = default;
-//     virtual ~EntrySource() = default;
-//     virtual QVector<Entry> load() = 0;
-//
-//     EntrySource(const EntrySource&) = delete;
-//     EntrySource& operator=(const EntrySource&) = delete;
-// };
-
 #pragma once
 #include "Entry.h"
 #include <QVector>
