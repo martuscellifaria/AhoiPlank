@@ -103,7 +103,7 @@ This is also under development, how extensible it will be. My first config file 
 ```json
 {
     "text_editor": "nvim",
-    "text_editor_terminal": "alacritty",
+    "terminal": "alacritty",
     "style": {
         "screen_width": 640,
         "screen_height": 420,
@@ -173,6 +173,29 @@ Then:
 ![AhoiPlank bookmarks mode](resources/ahoiplank-bookmarks-window.png)
 
 And then it will open on your default browser.
+
+### SSH
+
+```bash
+ahoiplank --ssh
+```
+
+It will read from `~/.config/ahoiplank/ssh.json`. For example:
+
+```json
+{
+  "ssh": [
+    { 
+        "name": "AlexRemote", 
+        "host": "localhost",
+        "user": "alex",
+        "icon": "network-server"
+    }
+  ]
+}
+
+```
+And then it will start your ssh session on the terminal configured on your `config.json` file.
 
 ### Dotfiles
 

@@ -1,15 +1,14 @@
 #include "EntryModel.h"
+#include "BookmarksSource.h"
+#include "DesktopSource.h"
+#include "DotfilesSource.h"
+#include "SshSource.h"
+#include "BookmarkLauncher.h"
+#include "DesktopLauncher.h"
+#include "DotfileLauncher.h"
+#include "SshLauncher.h"
 #include <QCoreApplication>
-#include <QDir>
-#include <QFileInfo>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QRegularExpression>
-#include <QSet>
 #include <algorithm>
-#include <print>
 
 namespace {
 
@@ -93,27 +92,22 @@ double fuzzy_score_multi(const QString& query, const QString& target) {
     return total;
 }
 
-QString strip_desktop_field_codes(const QString& exec) {
-    static const QRegularExpression re(QStringLiteral("%[fFuUdDnNickvm%]"));
-    QString out;
-    out.reserve(exec.size());
-    int last = 0;
-    auto it = re.globalMatch(exec);
-    while (it.hasNext()) {
-        const auto m = it.next();
-        out += exec.mid(last, m.capturedStart() - last);
-        if (m.capturedLength() == 2 && m.captured().at(1) == u'%') {
-            out += u'%';
-        }
-        last = m.capturedEnd();
-    }
-    out += exec.mid(last);
-    return out;
-}
-
 } // namespace
 
+static_assert(static_cast<size_t>(EntryModel::Mode::SSH) == 3,
+              "keep array sizes in sync with Mode enum");
+
 EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
+    sources_[static_cast<size_t>(Mode::Standard)]  = std::make_unique<DesktopSource>();
+    sources_[static_cast<size_t>(Mode::Bookmarks)] = std::make_unique<BookmarksSource>();
+    sources_[static_cast<size_t>(Mode::Dotfiles)]  = std::make_unique<DotfilesSource>();
+    sources_[static_cast<size_t>(Mode::SSH)]       = std::make_unique<SshSource>();
+
+    launchers_[static_cast<size_t>(Mode::Standard)]  = std::make_unique<DesktopLauncher>();
+    launchers_[static_cast<size_t>(Mode::Bookmarks)] = std::make_unique<BookmarkLauncher>();
+    launchers_[static_cast<size_t>(Mode::Dotfiles)]  = std::make_unique<DotfileLauncher>();
+    launchers_[static_cast<size_t>(Mode::SSH)]       = std::make_unique<SshLauncher>();
+
     rebuild();
 }
 
@@ -166,38 +160,14 @@ void EntryModel::rebuild() {
     current_filter_.clear();
 
     beginResetModel();
-    all_.clear();
-    filtered_idx_.clear();
-
-    switch (mode_) {
-        default:
-        case Mode::Standard:
-        {
-            load_desktop_files();
-            break;
-        }
-        case Mode::Bookmarks:
-        {
-            load_bookmarks();
-            break;
-        }
-        case Mode::Dotfiles:
-        {
-            load_dotfiles();
-            break;
-        }
-        case Mode::SSH:
-        {
-            load_ssh();
-            break;
-        }
-    }
+    all_ = sources_[static_cast<size_t>(mode_)]->load();
 
     std::sort(all_.begin(), all_.end(),
           [](const Entry& a, const Entry& b) {
               return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
           });
 
+    filtered_idx_.clear();
     filtered_idx_.reserve(all_.size());
     for (int i = 0; i < all_.size(); ++i) {
         filtered_idx_.append(i);
@@ -254,72 +224,8 @@ bool EntryModel::launch(int row) {
         return false;
     }
     const Entry& entry = all_.at(filtered_idx_.at(row));
-
-    switch (mode_) {
-        default:
-        case Mode::Standard:
-            return launch_standard(entry);
-        case Mode::Bookmarks:
-            return launch_bookmark(entry);
-        case Mode::Dotfiles:
-            return launch_dotfile(entry);
-        case Mode::SSH:
-            return launch_ssh(entry);
-    }
-}
-
-bool EntryModel::launch_standard(const Entry &entry) {
-    const QString exec = strip_desktop_field_codes(entry.exec);
-    QStringList argv = QProcess::splitCommand(exec);
-    if (argv.isEmpty()) {
-        return false;
-    }
-    const bool ok = QProcess::startDetached(argv.takeFirst(), argv);
-    if (ok) {
-        emit dismissed();
-    }
-    return ok;
-}
-
-bool EntryModel::launch_bookmark(const Entry &entry) {
-    const bool ok = QProcess::startDetached("xdg-open", { entry.exec });
-    if (ok) {
-        emit dismissed();
-    }
-    return ok;
-}
-
-bool EntryModel::launch_dotfile(const Entry &entry) {
-    const QString terminal = TerminalLauncher::find_terminal(terminal_);
-    if (terminal.isEmpty()) {
-        std::println(stderr, "dotfiles: no terminal found, set terminal in config.json");
-        return false;
-    }
-
-    const QString script = QStringLiteral("cd %1 && exec %2 .")
-        .arg(TerminalLauncher::shell_quote(entry.exec), text_editor_);
-
-    const bool ok = TerminalLauncher::run_in_terminal_argv(
-        terminal,
-        { "sh", "-c", script });
-
-    if (ok) {
-        emit dismissed();
-    }
-    return ok;
-}
-
-bool EntryModel::launch_ssh(const Entry &entry) {
-    const QString terminal = TerminalLauncher::find_terminal(terminal_);
-    if (terminal.isEmpty()) {
-        std::println(stderr, "ssh: no terminal found, set terminal in config.json");
-        return false;
-    }
-
-    const bool ok = TerminalLauncher::run_in_terminal_argv(
-        terminal,
-        { "ssh", entry.exec });
-
+    const bool ok = launchers_[static_cast<size_t>(mode_)]
+                        ->launch(entry, text_editor_, terminal_);
     if (ok) {
         emit dismissed();
     }
@@ -332,189 +238,4 @@ void EntryModel::quit() {
 
 void EntryModel::dismiss() {
     emit dismissed();
-}
-
-void EntryModel::load_desktop_files() {
-    const QStringList dirs = QStandardPaths::standardLocations(
-            QStandardPaths::ApplicationsLocation);
-
-    QSet<QString> seen;
-    seen.reserve(512);
-
-    for (const auto& dir : dirs) {
-        QDir d(dir);
-        if (!d.exists()) { continue; }
-        const auto files = d.entryList({ "*.desktop" }, QDir::Files);
-        for (const auto& file : files) {
-            if (seen.contains(file)) {
-                continue;
-            }
-            seen.insert(file);
-            Entry e;
-            if (parse_desktop(d.filePath(file), e)) {
-                all_.append(e);
-            }
-        }
-    }
-}
-
-void EntryModel::load_bookmarks() {
-    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-                         + "/ahoiplank/bookmarks.json";
-
-    QFile f(path);
-    if (!f.open(QIODevice::ReadOnly)) {
-        return;
-    }
-
-    QJsonParseError perr{};
-    const QJsonObject root = QJsonDocument::fromJson(f.readAll(), &perr).object();
-    if (perr.error != QJsonParseError::NoError) {
-        std::println(stderr, "bookmarks: {} is not valid json ({})",
-                     path.toStdString(), perr.errorString().toStdString());
-        return;
-    }
-    if (root.isEmpty()) {
-        return;
-    }
-
-    const QJsonArray arr = root.value("bookmarks").toArray();
-    for (const auto& v : arr) {
-        const QJsonObject o = v.toObject();
-        Entry e;
-        e.name = o.value("name").toString();
-        e.exec = o.value("url").toString();
-        if (!e.exec.startsWith("http://") && !e.exec.startsWith("https://")) {
-            e.exec = "http://" + e.exec;
-        }
-        e.comment = o.value("comment").toString();
-        e.icon = o.value("icon").toString();
-        if (e.icon.isEmpty()) {
-            e.icon = QStringLiteral("zen-browser");
-        }
-        e.lower_name = e.name.toLower();
-        if (!e.name.isEmpty() && !e.exec.isEmpty()) {
-            all_.append(e);
-        }
-    }
-}
-
-void EntryModel::load_dotfiles() {
-    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
-
-    QDir config_dir(path);
-    if (!config_dir.exists()) {
-        return;
-    }
-
-    const auto dirs = config_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
-    for (const auto& name : dirs) {
-        if (name.startsWith(".")) {
-            continue;
-        }
-        Entry e;
-        e.name = name;
-        e.exec = config_dir.filePath(name);
-        e.comment = e.exec;
-        e.icon = QStringLiteral("folder");
-        e.lower_name = name.toLower();
-        all_.append(e);
-    }
-}
-
-void EntryModel::load_ssh() {
-    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-                         + "/ahoiplank/ssh.json";
-
-    QFile f(path);
-    if (!f.open(QIODevice::ReadOnly)) {
-        return;
-    }
-
-    QJsonParseError perr{};
-    const QJsonObject root = QJsonDocument::fromJson(f.readAll(), &perr).object();
-    if (perr.error != QJsonParseError::NoError) {
-        std::println(stderr, "ssh: {} is not valid json ({})",
-                     path.toStdString(), perr.errorString().toStdString());
-        return;
-    }
-    if (root.isEmpty()) {
-        return;
-    }
-
-    const QJsonArray arr = root.value("ssh").toArray();
-    for (const auto& v : arr) {
-        const QJsonObject o = v.toObject();
-        Entry e;
-        e.name = o.value("name").toString();
-        e.exec = o.value("user").toString() + "@" + o.value("host").toString();
-        e.icon = o.value("icon").toString();
-        if (e.icon.isEmpty()) {
-            e.icon = QStringLiteral("network-server");
-        }
-        e.lower_name = e.name.toLower();
-        if (!e.name.isEmpty() && !e.exec.isEmpty()) {
-            all_.append(e);
-        }
-    }
-}
-
-bool EntryModel::parse_desktop(const QString& path, Entry& out) {
-    QFile f(path);
-    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) { return false; }
-
-    bool in_desktop_entry = false;
-    bool is_application = false;
-    bool no_display = false;
-    bool hidden = false;
-    QString name, exec, comment, icon;
-
-    while (!f.atEnd()) {
-        const QByteArray line = f.readLine();
-        if (line.isEmpty()) { continue; }
-
-        if (line.startsWith('[')) {
-            in_desktop_entry = (line.trimmed() == "[Desktop Entry]");
-            if (!in_desktop_entry && is_application) { break; }
-            continue;
-        }
-        if (!in_desktop_entry) { continue; }
-
-        int eq = static_cast<int>(line.indexOf('='));
-        if (eq <= 0) { continue; }
-        const QByteArray key = line.left(eq).trimmed();
-        QByteArray value = line.mid(eq + 1);
-        while (value.endsWith('\n') || value.endsWith('\r')) { value.chop(1); }
-
-        if (key == "Type") {
-            is_application = (value == "Application");
-        }
-        else if (key == "NoDisplay") {
-            no_display = (value == "true");
-        }
-        else if (key == "Hidden") {
-            hidden = (value == "true");
-        }
-        else if (key == "Name") {
-            name = QString::fromUtf8(value);
-        }
-        else if (key == "Exec") {
-            exec = QString::fromUtf8(value);
-        }
-        else if (key == "Comment") {
-            comment = QString::fromUtf8(value);
-        }
-        else if (key == "Icon") {
-            icon = QString::fromUtf8(value);
-        }
-    }
-
-    if (!is_application || no_display || hidden || name.isEmpty()) { return false; }
-
-    out.lower_name = name.toLower();
-    out.name = std::move(name);
-    out.exec = std::move(exec);
-    out.comment = std::move(comment);
-    out.icon = std::move(icon);
-    return true;
 }

@@ -1,4 +1,7 @@
 #pragma once
+#include "Entry.h"
+#include "EntryLauncher.h"
+#include "EntrySource.h"
 #include <QAbstractListModel>
 #include <QHash>
 #include <QString>
@@ -6,7 +9,9 @@
 #include <QVector>
 #include <QProcess>
 #include <QStandardPaths>
+#include <array>
 #include <cstdint>
+#include <memory>
 
 namespace TerminalLauncher {
 
@@ -124,25 +129,7 @@ signals:
     void modeChanged();
 
 private:
-    void load_desktop_files();
-    void load_bookmarks();
-    void load_dotfiles();
-    void load_ssh();
     void rebuild();
-
-    struct Entry {
-        QString name;
-        QString exec;
-        QString comment;
-        QString icon;
-        QString lower_name;
-    };
-    static bool parse_desktop(const QString& path, Entry& out);
-
-    bool launch_standard(const Entry& entry);
-    bool launch_bookmark(const Entry& entry);
-    bool launch_dotfile(const Entry& entry);
-    bool launch_ssh(const Entry& entry);
 
     Mode mode_ = Mode::Standard;
     QString text_editor_ = QStringLiteral("vim");
@@ -153,4 +140,6 @@ private:
     QVector<QPair<double, int>> scored_buf_;
     QString current_filter_;
 
+    std::array<std::unique_ptr<EntrySource>,   4> sources_;
+    std::array<std::unique_ptr<EntryLauncher>, 4> launchers_;
 };
