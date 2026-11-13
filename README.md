@@ -239,7 +239,7 @@ ahoiplank --help
 
 ## Config Dotfiles
 
-This repo also contains my two example dotfiles. They are located at the `dotfiles/` directory, relative to the root of the repo once cloned.
+This repo also contains three example dotfiles. They are located at the `dotfiles/` directory, relative to the root of the repo once cloned.
 The following does the trick.
 
 ```bash
