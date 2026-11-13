@@ -110,13 +110,13 @@ int main(int argc, char* argv[]) {
     if (is_wsl()) {
         std::println(stderr, "AhoiPlank: running on WSL "
                 "may mess things up. Not starting.");
-	return 1;
+    	return 1;
     }
 
     if (is_ssh()) {
         std::println(stderr, "AhoiPlank: running on an SSH "
                 "session is not the way intended. Not starting");
-	return 1;
+    	return 1;
     }
 
     if (daemon_stop) {
