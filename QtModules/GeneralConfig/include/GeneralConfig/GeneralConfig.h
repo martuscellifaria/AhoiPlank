@@ -34,6 +34,9 @@ class GeneralConfig : public QObject {
 
     Q_PROPERTY(int columns READ columns NOTIFY changed)
 
+    Q_PROPERTY(bool status_bar_visible READ status_bar_visible NOTIFY changed)
+    Q_PROPERTY(QString status_bar_position READ status_bar_position NOTIFY changed)
+
     Q_PROPERTY(QString text_editor READ text_editor NOTIFY changed)
     Q_PROPERTY(QString terminal READ terminal NOTIFY changed)
 
@@ -63,6 +66,8 @@ public:
     QString vertical_position() const { return vertical_position_; }
 
     int columns() const { return columns_; }
+    bool status_bar_visible() const { return status_bar_visible_; }
+    QString status_bar_position() const { return status_bar_position_; }
 
     QString text_editor() const { return text_editor_; }
     QString terminal() const { return terminal_; }
@@ -94,6 +99,9 @@ private:
     int screen_width_ { 640 };
     int screen_height_ { 420 };
     QString vertical_position_ = "center";
+
+    bool status_bar_visible_ { false };
+    QString status_bar_position_ = "bottom";
 
     int columns_ { 1 };
 

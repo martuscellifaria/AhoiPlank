@@ -80,6 +80,7 @@ inline bool run_in_terminal_argv(const QString& terminal,
 
 class EntryModel : public QAbstractListModel {
     Q_OBJECT
+    Q_PROPERTY(QString modeString READ mode_string NOTIFY modeChanged)
 
 public:
     enum class Mode : std::uint8_t {
@@ -123,6 +124,7 @@ public:
     void request_reset();
     void set_text_editor(const QString& editor) { text_editor_ = editor; }
     void set_terminal(const QString& terminal) { terminal_ = terminal; }
+    QString mode_string() const { return mode_to_string(mode_); }
 
 signals:
     void dismissed();

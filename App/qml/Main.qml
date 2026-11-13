@@ -48,6 +48,18 @@ Window {
             anchors.margins: 16
             spacing: 12
 
+            StatusBar {
+                id: status_bar
+                Layout.fillWidth: true
+                Layout.topMargin: -4
+                Layout.bottomMargin: -4
+                mode: app.modeString
+                background: "transparent"
+                foreground: theme.fg_dim
+                accent: theme.selection
+                barHeight: 20
+            }
+
             Rectangle {
                 id: search_bg
                 Layout.fillWidth: true

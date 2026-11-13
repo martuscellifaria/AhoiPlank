@@ -114,6 +114,8 @@ void GeneralConfig::reload() {
     int screen_height { 420 };
     int columns { 1 };
     QString vertical_position = "center";
+    bool status_bar_visible { false };
+    QString status_bar_position = "bottom";
     QString text_editor = "vim";
     QString terminal = "";
 
@@ -147,6 +149,10 @@ void GeneralConfig::reload() {
 
             screen_width  = int_or(style, "screen_width",  screen_width);
             screen_height = int_or(style, "screen_height", screen_height);
+
+            status_bar_visible = bool_or(style, "status_bar_visible", status_bar_visible);
+            status_bar_position = string_or(style, "status_bar_position", status_bar_position);
+            terminal = string_or(root, "terminal", terminal);
             columns = int_or(style, "columns", columns);
 
             const QJsonValue vp = style.value("vertical_position");
@@ -181,6 +187,9 @@ void GeneralConfig::reload() {
     screen_height_ = screen_height;
     vertical_position_ = vertical_position;
     columns_ = columns;
+
+    status_bar_visible_ = status_bar_visible;
+    status_bar_position_ = status_bar_position;
 
     text_editor_ = text_editor;
     terminal_ = terminal;
