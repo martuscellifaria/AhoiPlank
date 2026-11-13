@@ -103,7 +103,7 @@ This is also under development, how extensible it will be. My first config file 
 
 ```json
 {
-    "text_editor": "nvim",
+    "text_editor": "vim",
     "terminal": "alacritty",
     "style": {
         "screen_width": 640,
@@ -112,11 +112,14 @@ This is also under development, how extensible it will be. My first config file 
 
         "radius_window": 14,
         "radius_item": 8,
+        "border_width": 1,
 
         "font_family": "monospace",
         "font_size_search": 18,
         "font_size_title": 14,
         "font_size_comment": 11,
+        "font_bold": false,
+        "columns": 1,
 
         "colors": {
             "bg":        "#1f2335",

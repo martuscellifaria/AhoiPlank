@@ -12,6 +12,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <qcontainerfwd.h>
 
 namespace TerminalLauncher {
 
@@ -130,16 +131,20 @@ signals:
 
 private:
     void rebuild();
+    void apply_filter_diff(const QVector<int>& new_idx);
 
     Mode mode_ = Mode::Standard;
     QString text_editor_ = QStringLiteral("vim");
     QString terminal_ = QStringLiteral("");
 
     QVector<Entry> all_;
-    QVector<int>   filtered_idx_;
-    QVector<QPair<double, int>> scored_buf_;
+    QVector<int> filtered_idx_;
+    struct Scored {
+        double score; int idx;
+    };
+    QVector<Scored> scored_buf_;
     QString current_filter_;
 
-    std::array<std::unique_ptr<EntrySource>,   4> sources_;
+    std::array<std::unique_ptr<EntrySource>, 4> sources_;
     std::array<std::unique_ptr<EntryLauncher>, 4> launchers_;
 };

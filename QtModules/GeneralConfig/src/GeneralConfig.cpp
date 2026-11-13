@@ -60,6 +60,26 @@ QString string_or(const QJsonObject &obj, const char *key, const QString &fallba
     return v.toString();
 }
 
+bool bool_or(const QJsonObject &obj, const char *key, bool fallback) {
+    const auto v = obj.value(QLatin1String(key));
+    if (v.isBool())  {
+        return v.toBool();
+    }
+    if (v.isDouble()) {
+        return v.toInt() != 0;
+    }
+    if (v.isString()) {
+        const auto s = v.toString().trimmed().toLower();
+        if (s == "true"  || s == "1" || s == "yes" || s == "on")  {
+            return true;
+        }
+        if (s == "false" || s == "0" || s == "no"  || s == "off") {
+            return false;
+        }
+    }
+    return fallback;
+}
+
 QString config_path() {
     return QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
            + "/ahoiplank/config.json";
@@ -81,15 +101,18 @@ void GeneralConfig::reload() {
     QColor accent     { QStringLiteral("#f7768e") };
 
     QString font_family       { QStringLiteral("monospace") };
-    int     font_size_search  { 18 };
-    int     font_size_title   { 14 };
-    int     font_size_comment { 11 };
+    int font_size_search  { 18 };
+    int font_size_title   { 14 };
+    int font_size_comment { 11 };
+    bool font_bold { false };
 
     int radius_window { 14 };
     int radius_item   { 8 };
+    int border_width   { 1 };
 
     int screen_width  { 640 };
     int screen_height { 420 };
+    int columns { 1 };
     QString vertical_position = "center";
     QString text_editor = "vim";
     QString terminal = "";
@@ -116,12 +139,15 @@ void GeneralConfig::reload() {
             font_size_search = int_or(style, "font_size_search", font_size_search);
             font_size_title = int_or(style, "font_size_title", font_size_title);
             font_size_comment = int_or(style, "font_size_comment", font_size_comment);
+            font_bold = bool_or(style, "font_bold", font_bold);
 
             radius_window = int_or(style, "radius_window", radius_window);
-            radius_item = int_or(style, "radius_item",   radius_item);
+            radius_item = int_or(style, "radius_item", radius_item);
+            border_width = int_or(style, "border_width", border_width);
 
             screen_width  = int_or(style, "screen_width",  screen_width);
             screen_height = int_or(style, "screen_height", screen_height);
+            columns = int_or(style, "columns", columns);
 
             const QJsonValue vp = style.value("vertical_position");
             if (vp.isString()) {
@@ -145,13 +171,16 @@ void GeneralConfig::reload() {
     font_size_search_ = font_size_search;
     font_size_title_ = font_size_title;
     font_size_comment_ = font_size_comment;
+    font_bold_ = font_bold;
 
     radius_window_ = radius_window;
     radius_item_ = radius_item;
+    border_width_ = border_width;
 
     screen_width_ = screen_width;
     screen_height_ = screen_height;
     vertical_position_ = vertical_position;
+    columns_ = columns;
 
     text_editor_ = text_editor;
     terminal_ = terminal;

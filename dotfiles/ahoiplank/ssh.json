@@ -3,7 +3,7 @@
     { 
         "name": "AlexRemote", 
         "host": "localhost",
-    "user": "alex",
+        "user": "alex",
         "icon": "network-server"
     }
   ]
