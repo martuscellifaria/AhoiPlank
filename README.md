@@ -6,7 +6,8 @@ Its features are:
 - fuzzy search
 - standard mode for launching desktop applications
 - bookmarks mode for opening bookmarks on the browser
-- dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor.
+- dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor
+- ssh mode for starting remote sessions on a separate terminal
 
 `AhoiPlank` has also a daemon.
 
