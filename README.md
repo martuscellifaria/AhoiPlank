@@ -1,17 +1,19 @@
 # AhoiPlank <img src="resources/plank.png" width="30" height="30" alt="icon">
 
-A minimal and customizable Wayland launcher built with Qt 6 and QML, bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
+A customizable Wayland launcher built with Qt 6 and QML that looks pretty out of the box.
+It was bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
 
 Its features are:
+- daemon
 - fuzzy search
 - standard mode for launching desktop applications
 - bookmarks mode for opening bookmarks on the browser
 - dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor
 - ssh mode for starting remote sessions on a separate terminal
+- vim-style status bar
+- mode switcher with Tab/BackTab
 
-`AhoiPlank` has also a daemon.
-
-![AhoiPlank window](resources/ahoiplank-window.png)
+![AhoiPlank window](resources/ahoiplank.gif)
 
 Currently tested on `sway` and `hyprland`, but should work on other Wayland compositors as well.
 Distros tested were Ubuntu 26.04 and Arch Linux, both on x86_64 and aarch64.
@@ -191,11 +193,8 @@ It will read from `~/.config/ahoiplank/bookmarks.json`. For example:
   ]
 }
 ```
-Then:
 
-![AhoiPlank bookmarks mode](resources/ahoiplank-bookmarks-window.png)
-
-And then it will open on your default browser.
+Select and then it will open on your default browser.
 
 ### SSH
 
@@ -227,8 +226,6 @@ ahoiplank --dotfiles
 ```
 
 It will read all directories inside `~/.config`. You will then be able to browse your dotfiles from in your own terminal and editor. These are set in the `config.json` file.
-
-![AhoiPlank dotfiles mode](resources/ahoiplank-dotfiles-window.png)
 
 ## Running the daemon on background
 
