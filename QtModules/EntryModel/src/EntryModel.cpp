@@ -261,6 +261,7 @@ void EntryModel::set_filter(const QString& query) {
         return;
     }
     current_filter_ = q;
+    const QString q_lower = q.toLower();
 
     QVector<int> new_idx;
     if (q.isEmpty()) {
@@ -273,7 +274,7 @@ void EntryModel::set_filter(const QString& query) {
         scored_buf_.clear();
         scored_buf_.reserve(all_.size());
         for (int i = 0; i < all_.size(); ++i) {
-            const double s = fuzzy_score_multi(q, all_.at(i).lower_name);
+            const double s = fuzzy_score_multi(q_lower, all_.at(i).lower_name);
             if (s > -1e8) {
                 scored_buf_.append({s, i});
             }
