@@ -6,7 +6,7 @@
         "screen_height": 420,
         "vertical_position": "center",
 
-        "status_bar_visible": false,
+        "status_bar_visible": true,
         "status_bar_position": "bottom",
         "status_bar_height": 20,
         "status_bar_gap": 12,
