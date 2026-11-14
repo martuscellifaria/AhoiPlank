@@ -114,6 +114,25 @@ void GeneralConfig::reload() {
     int screen_height { 420 };
     int columns { 1 };
     QString vertical_position = "center";
+
+    bool status_bar_visible { false };
+    QString status_bar_position = "bottom";
+    QColor status_bar_bg { QStringLiteral("#1a1b26") };
+    QColor status_bar_fg { QStringLiteral("#c0caf5") };
+    QColor status_bar_pill { QStringLiteral("#7dcfff") };
+    int status_bar_height { 20 };
+    int status_bar_gap { 12 };
+    int status_bar_pill_padding { 14 };
+
+    int layout_margin { 16 };
+    int layout_spacing { 12 };
+    int search_padding { 8 };
+
+    int item_height { 44 };
+    int item_padding { 12 };
+    int icon_size { 24 };
+    int icon_spacing { 10 };
+
     QString text_editor = "vim";
     QString terminal = "";
 
@@ -131,6 +150,9 @@ void GeneralConfig::reload() {
             border = color_or(colors, "border", border);
             selection = color_or(colors, "selection", selection);
             accent = color_or(colors, "accent", accent);
+            status_bar_bg   = color_or(colors, "status_bar_bg",   status_bar_bg);
+            status_bar_fg   = color_or(colors, "status_bar_fg",   status_bar_fg);
+            status_bar_pill = color_or(colors, "status_bar_pill", status_bar_pill);
 
             text_editor = string_or(root, "text_editor", text_editor);
             terminal = string_or(root, "terminal", terminal);
@@ -147,6 +169,22 @@ void GeneralConfig::reload() {
 
             screen_width  = int_or(style, "screen_width",  screen_width);
             screen_height = int_or(style, "screen_height", screen_height);
+
+            status_bar_visible = bool_or(style, "status_bar_visible", status_bar_visible);
+            status_bar_position = string_or(style, "status_bar_position", status_bar_position);
+            status_bar_height = int_or(style, "status_bar_height", status_bar_height);
+            status_bar_gap = int_or(style, "status_bar_gap", status_bar_gap);
+            status_bar_pill_padding = int_or(style, "status_bar_pill_padding", status_bar_pill_padding);
+
+            layout_margin = int_or(style, "layout_margin", layout_margin);
+            layout_spacing = int_or(style, "layout_spacing", layout_spacing);
+            search_padding = int_or(style, "search_padding", search_padding);
+
+            item_height = int_or(style, "item_height", item_height);
+            item_padding = int_or(style, "item_padding", item_padding);
+            icon_size = int_or(style, "icon_size", icon_size);
+            icon_spacing = int_or(style, "icon_spacing", icon_spacing);
+
             columns = int_or(style, "columns", columns);
 
             const QJsonValue vp = style.value("vertical_position");
@@ -181,6 +219,24 @@ void GeneralConfig::reload() {
     screen_height_ = screen_height;
     vertical_position_ = vertical_position;
     columns_ = columns;
+
+    status_bar_visible_ = status_bar_visible;
+    status_bar_position_ = status_bar_position;
+    status_bar_bg_ = status_bar_bg;
+    status_bar_fg_ = status_bar_fg;
+    status_bar_pill_ = status_bar_pill;
+    status_bar_height_ = status_bar_height;
+    status_bar_gap_ = status_bar_gap;
+    status_bar_pill_padding_ = status_bar_pill_padding;
+
+    layout_margin_ = layout_margin;
+    layout_spacing_ = layout_spacing;
+    search_padding_ = search_padding;
+
+    item_height_ = item_height;
+    item_padding_ = item_padding;
+    icon_size_ = icon_size;
+    icon_spacing_ = icon_spacing;
 
     text_editor_ = text_editor;
     terminal_ = terminal;

@@ -1,17 +1,19 @@
 # AhoiPlank <img src="resources/plank.png" width="30" height="30" alt="icon">
 
-A minimal and customizable Wayland launcher built with Qt 6 and QML, bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
+A customizable Wayland launcher built with Qt 6 and QML that looks pretty out of the box.
+It was bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim) and looks like:
+
+![AhoiPlank window](resources/ahoiplank.gif)
 
 Its features are:
+- daemon
 - fuzzy search
 - standard mode for launching desktop applications
 - bookmarks mode for opening bookmarks on the browser
 - dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor
 - ssh mode for starting remote sessions on a separate terminal
-
-`AhoiPlank` has also a daemon.
-
-![AhoiPlank window](resources/ahoiplank-window.png)
+- vim-style status bar
+- mode switcher with Tab/BackTab
 
 Currently tested on `sway` and `hyprland`, but should work on other Wayland compositors as well.
 Distros tested were Ubuntu 26.04 and Arch Linux, both on x86_64 and aarch64.
@@ -110,6 +112,21 @@ This is also under development, how extensible it will be. My first config file 
         "screen_height": 420,
         "vertical_position": "center",
 
+        "status_bar_visible": false,
+        "status_bar_position": "bottom",
+        "status_bar_height": 20,
+        "status_bar_gap": 12,
+        "status_bar_pill_padding": 14,
+
+        "layout_margin": 16,
+        "layout_spacing": 12,
+        "search_padding": 8,
+
+        "item_height": 44,
+        "item_padding": 12,
+        "icon_size": 24,
+        "icon_spacing": 10,
+
         "radius_window": 14,
         "radius_item": 8,
         "border_width": 1,
@@ -128,7 +145,11 @@ This is also under development, how extensible it will be. My first config file 
             "fg_dim":    "#a9b1d6",
             "border":    "#7dcfff66",
             "selection": "#7dcfff24",
-            "accent":    "#f7768e"
+            "accent":    "#f7768e",
+
+            "status_bar_bg":   "#1a1b26",
+            "status_bar_fg":   "#c0caf5",
+            "status_bar_pill": "#7dcfff"
         }
     }
 }
@@ -172,11 +193,8 @@ It will read from `~/.config/ahoiplank/bookmarks.json`. For example:
   ]
 }
 ```
-Then:
 
-![AhoiPlank bookmarks mode](resources/ahoiplank-bookmarks-window.png)
-
-And then it will open on your default browser.
+Select and then it will open on your default browser.
 
 ### SSH
 
@@ -208,8 +226,6 @@ ahoiplank --dotfiles
 ```
 
 It will read all directories inside `~/.config`. You will then be able to browse your dotfiles from in your own terminal and editor. These are set in the `config.json` file.
-
-![AhoiPlank dotfiles mode](resources/ahoiplank-dotfiles-window.png)
 
 ## Running the daemon on background
 

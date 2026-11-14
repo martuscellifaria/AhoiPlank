@@ -80,6 +80,7 @@ inline bool run_in_terminal_argv(const QString& terminal,
 
 class EntryModel : public QAbstractListModel {
     Q_OBJECT
+    Q_PROPERTY(QString modeString READ mode_string NOTIFY modeChanged)
 
 public:
     enum class Mode : std::uint8_t {
@@ -117,12 +118,15 @@ public:
     Q_INVOKABLE void quit();
     Q_INVOKABLE void dismiss();
     Q_INVOKABLE void set_mode(const Mode& mode);
+    Q_INVOKABLE void cycle_mode(int direction);
+    Q_INVOKABLE QString mode_placeholder() const;
     Q_INVOKABLE void reload();
 
     Mode mode() const { return mode_; }
     void request_reset();
     void set_text_editor(const QString& editor) { text_editor_ = editor; }
     void set_terminal(const QString& terminal) { terminal_ = terminal; }
+    QString mode_string() const { return mode_to_string(mode_); }
 
 signals:
     void dismissed();

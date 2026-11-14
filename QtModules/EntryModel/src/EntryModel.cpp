@@ -152,6 +152,23 @@ void EntryModel::set_mode(const Mode& mode) {
     emit modeChanged();
 }
 
+void EntryModel::cycle_mode(int direction) {
+    const int n = 4;
+    int i = static_cast<int>(mode_);
+    i = ((i + direction) % n + n) % n;
+    set_mode(static_cast<Mode>(i));
+}
+
+QString EntryModel::mode_placeholder() const {
+    switch (mode_) {
+        case Mode::Bookmarks: return QStringLiteral("Search bookmarks…");
+        case Mode::Dotfiles:  return QStringLiteral("Search dotfiles…");
+        case Mode::SSH:       return QStringLiteral("Search SSH hosts…");
+        case Mode::Standard:  return QStringLiteral("Search…");
+    }
+    return QStringLiteral("Search…");
+}
+
 void EntryModel::reload() {
     rebuild();
 }
