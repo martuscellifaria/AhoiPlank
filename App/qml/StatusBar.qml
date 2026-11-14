@@ -27,6 +27,7 @@ Item {
             case "bookmark": return "BOOKMARK"
             case "dotfiles": return "DOTFILES"
             case "ssh":      return "SSH"
+            case "projects": return "PROJECTS"
             case "standard": return "NORMAL"
             default:         return root.mode ? root.mode.toUpperCase() : "NORMAL"
         }

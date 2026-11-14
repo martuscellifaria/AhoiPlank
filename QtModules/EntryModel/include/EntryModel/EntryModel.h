@@ -87,7 +87,8 @@ public:
         Standard,
         Bookmarks,
         Dotfiles,
-        SSH
+        SSH,
+        Projects
     };
 
     static inline QString mode_to_string(Mode m) {
@@ -96,6 +97,7 @@ public:
             case Mode::Bookmarks: return QStringLiteral("bookmark");
             case Mode::Dotfiles:  return QStringLiteral("dotfiles");
             case Mode::SSH:       return QStringLiteral("ssh");
+            case Mode::Projects:  return QStringLiteral("projects");
         }
         return QStringLiteral("standard");
     }
@@ -104,6 +106,7 @@ public:
         if (s == u"bookmark" || s == u"bookmarks") { return Mode::Bookmarks; }
         if (s == u"dotfiles") { return Mode::Dotfiles; }
         if (s == u"ssh") { return Mode::SSH; }
+        if (s == u"project" || s == u"projects") { return Mode::Projects; }
         return Mode::Standard;
     }
 
@@ -149,6 +152,6 @@ private:
     QVector<Scored> scored_buf_;
     QString current_filter_;
 
-    std::array<std::unique_ptr<EntrySource>, 4> sources_;
-    std::array<std::unique_ptr<EntryLauncher>, 4> launchers_;
+    std::array<std::unique_ptr<EntrySource>, 5> sources_;
+    std::array<std::unique_ptr<EntryLauncher>, 5> launchers_;
 };

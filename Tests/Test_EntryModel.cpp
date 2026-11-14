@@ -49,6 +49,7 @@ private slots:
         model_.reset();
         if (temp_dir_ && temp_dir_->isValid()) {
             QFile::remove(ssh_config_path());
+            QFile::remove(projects_config_path());
         }
         qunsetenv("TERMINAL");
     }
@@ -157,6 +158,23 @@ private slots:
     void mode_sameModeIsNoOp() {
         model_->set_mode(EntryModel::Mode::Standard);
         QCOMPARE(model_->rowCount(), 3);
+    }
+
+    void cycle_mode_visitsAllModesIncludingProjects() {
+        QSet<int> seen;
+        const int n = 5;
+        for (int i = 0; i < n; ++i) {
+            seen.insert(static_cast<int>(model_->mode()));
+            model_->cycle_mode(1);
+        }
+        QCOMPARE(seen.size(), n);
+        QVERIFY(seen.contains(static_cast<int>(EntryModel::Mode::Projects)));
+        QCOMPARE(model_->mode(), EntryModel::Mode::Standard);
+    }
+
+    void cycle_mode_backwardsFromStandardReachesProjects() {
+        model_->cycle_mode(-1);
+        QCOMPARE(model_->mode(), EntryModel::Mode::Projects);
     }
 
     void ssh_setModeChangesMode() {
@@ -312,6 +330,183 @@ private slots:
         QCOMPARE(model_->launch(model_->rowCount()), false);
     }
 
+    void projects_setModeChangesMode() {
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->mode(), EntryModel::Mode::Projects);
+    }
+
+    void projects_missingConfigIsEmpty() {
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void projects_malformedConfigIsEmpty() {
+        write_file(projects_config_path(), "{ this is not json");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void projects_emptyArrayIsEmpty() {
+        write_file(projects_config_path(), R"({"projects":[]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void projects_emptyRootIsEmpty() {
+        write_file(projects_config_path(), R"({})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void projects_loadsEntries() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"ahoiplank","path":"/home/alex/Projekte/AhoiPlank"},
+                       {"name":"kernel","path":"/home/alex/Projekte/kernel"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 2);
+    }
+
+    void projects_entryRolesArePopulated() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"ahoiplank","path":"/home/alex/Projekte/AhoiPlank","comment":"launcher"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 1);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("ahoiplank"));
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 2).toString(),
+                 QStringLiteral("/home/alex/Projekte/AhoiPlank"));
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 3).toString(),
+                 QStringLiteral("launcher"));
+    }
+
+    void projects_defaultIconWhenMissing() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"ahoiplank","path":"/home/alex/Projekte/AhoiPlank"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 4).toString(),
+                 QStringLiteral("nvim"));
+    }
+
+    void projects_customIconIsKept() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"ahoiplank","path":"/home/alex/Projekte/AhoiPlank","icon":"folder-git"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 4).toString(),
+                 QStringLiteral("folder-git"));
+    }
+
+    void projects_skipsEntriesWithEmptyName() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"","path":"/home/alex/Projekte/ghost"},
+                       {"path":"/home/alex/Projekte/noname"},
+                       {"name":"Good","path":"/home/alex/Projekte/good"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 1);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Good"));
+    }
+
+    void projects_skipsEntriesWithEmptyPath() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"NoPath","path":""},
+                       {"name":"Good","path":"/home/alex/Projekte/good"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 1);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Good"));
+    }
+
+    void projects_entriesAreSortedCaseInsensitively() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"zulu","path":"/p/z"},
+                       {"name":"Alpha","path":"/p/a"},
+                       {"name":"mike","path":"/p/m"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 3);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Alpha"));
+        QCOMPARE(model_->data(model_->index(1), Qt::UserRole + 1).toString(),
+                 QStringLiteral("mike"));
+        QCOMPARE(model_->data(model_->index(2), Qt::UserRole + 1).toString(),
+                 QStringLiteral("zulu"));
+    }
+
+    void projects_filterMatchesByName() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"ahoiplank","path":"/p/ahoiplank"},
+                       {"name":"kernel","path":"/p/kernel"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        model_->set_filter(QStringLiteral("ahoi"));
+        QCOMPARE(model_->rowCount(), 1);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("ahoiplank"));
+    }
+
+    void projects_filterIsCaseInsensitive() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"ahoiplank","path":"/p/ahoiplank"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        model_->set_filter(QStringLiteral("AHOI"));
+        QCOMPARE(model_->rowCount(), 1);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("ahoiplank"));
+    }
+
+    void projects_switchingAwayAndBackReloads() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"ahoiplank","path":"/p/ahoiplank"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 1);
+        model_->set_mode(EntryModel::Mode::Standard);
+        QCOMPARE(model_->rowCount(), 3);
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->rowCount(), 1);
+    }
+
+    void projects_launchInvalidRowReturnsFalse() {
+        write_file(projects_config_path(),
+                   R"({"projects":[
+                       {"name":"ahoiplank","path":"/p/ahoiplank"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Projects);
+        QCOMPARE(model_->launch(-1), false);
+        QCOMPARE(model_->launch(model_->rowCount()), false);
+    }
+
     void shellQuote_plainStringIsWrapped() {
         QCOMPARE(TerminalLauncher::shell_quote("hello"),
                  QStringLiteral("'hello'"));
@@ -358,6 +553,11 @@ private:
     QString ssh_config_path() const {
         Q_ASSERT(temp_dir_ && temp_dir_->isValid());
         return temp_dir_->path() + "/ahoiplank/ssh.json";
+    }
+
+    QString projects_config_path() const {
+        Q_ASSERT(temp_dir_ && temp_dir_->isValid());
+        return temp_dir_->path() + "/ahoiplank/projects.json";
     }
 
     void write_file(const QString& path, const QByteArray& content) {

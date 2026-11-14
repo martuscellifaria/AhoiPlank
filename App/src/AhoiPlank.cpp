@@ -1,5 +1,6 @@
 #include "version.h"
 #include "EntryModel.h"
+#include "ProjectsSource.h"
 #include "IconProvider.h"
 #include "GeneralConfig.h"
 #include <QFile>
@@ -84,6 +85,8 @@ int main(int argc, char* argv[]) {
                     "\tOpens the launcher in dotfiles mode.\n\n"
                     "    --ssh\n"
                     "\tOpens the launcher in ssh mode.\n\n"
+                    "    --projects\n"
+                    "\tOpens the launcher in projects mode.\n\n"
                     "    --version\n"
                     "\tShows version metadata.\n\n"
                     "    --help\n"
@@ -105,18 +108,29 @@ int main(int argc, char* argv[]) {
         else if (arg == "--ssh") {
             mode = EntryModel::Mode::SSH;
         }
+        else if (arg == "--projects") {
+            mode = EntryModel::Mode::Projects;
+        }
+        else if (arg == "--pin-project") {
+            ProjectsSource::pin_project();
+            return 0;
+        }
+        else if (arg == "--unpin-project") {
+            ProjectsSource::unpin_project();
+            return 0;
+        }
     }
 
     if (is_wsl()) {
         std::println(stderr, "AhoiPlank: running on WSL "
                 "may mess things up. Not starting.");
-    	return 1;
+        return 1;
     }
 
     if (is_ssh()) {
         std::println(stderr, "AhoiPlank: running on an SSH "
                 "session is not the way intended. Not starting");
-    	return 1;
+        return 1;
     }
 
     if (daemon_stop) {

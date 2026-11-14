@@ -33,6 +33,7 @@ QVector<Entry> SshSource::load() {
         Entry e;
         e.name = o.value("name").toString();
         e.exec = o.value("user").toString() + "@" + o.value("host").toString();
+        e.comment = e.exec;
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {
             e.icon = QStringLiteral("network-server");
