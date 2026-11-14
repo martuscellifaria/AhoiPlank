@@ -1,7 +1,9 @@
 # AhoiPlank <img src="resources/plank.png" width="30" height="30" alt="icon">
 
 A customizable Wayland launcher built with Qt 6 and QML that looks pretty out of the box.
-It was bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim).
+It was bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim) and looks like:
+
+![AhoiPlank window](resources/ahoiplank.gif)
 
 Its features are:
 - daemon
@@ -12,8 +14,6 @@ Its features are:
 - ssh mode for starting remote sessions on a separate terminal
 - vim-style status bar
 - mode switcher with Tab/BackTab
-
-![AhoiPlank window](resources/ahoiplank.gif)
 
 Currently tested on `sway` and `hyprland`, but should work on other Wayland compositors as well.
 Distros tested were Ubuntu 26.04 and Arch Linux, both on x86_64 and aarch64.
