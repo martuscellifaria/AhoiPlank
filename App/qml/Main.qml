@@ -14,6 +14,15 @@ Window {
 
     readonly property int columns: Math.max(1, theme.columns)
     readonly property bool bar_on_top: theme.status_bar_position !== "bottom"
+    readonly property var mode_order: ["standard", "bookmark", "dotfiles", "ssh"]
+    readonly property int current_mode_index: {
+        const i = mode_order.indexOf(app.modeString)
+        return i < 0 ? 0 : i
+    }
+    readonly property string next_mode_label:
+        mode_order[(current_mode_index + 1) % mode_order.length].toUpperCase()
+    readonly property string prev_mode_label:
+        mode_order[(current_mode_index - 1 + mode_order.length) % mode_order.length].toUpperCase()
 
     onActiveChanged: {
         if (active) {
@@ -30,9 +39,12 @@ Window {
         target: app
         function onResetRequested() {
             search.text = ""
-            Qt.callLater(() => {
-                grid.currentIndex = grid.count > 0 ? 0 : -1
-            })
+            grid.currentIndex = grid.count > 0 ? 0 : -1
+            search.forceActiveFocus()
+        }
+        function onModeChanged() {
+            search.text = ""
+            grid.currentIndex = grid.count > 0 ? 0 : -1
             search.forceActiveFocus()
         }
     }
@@ -66,6 +78,8 @@ Window {
                 fontFamily: theme.font_family
                 fontSize: theme.font_size_comment
                 fontBold: theme.font_bold
+                nextModeLabel: window.next_mode_label
+                prevModeLabel: window.prev_mode_label
 
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -118,7 +132,10 @@ Window {
                         Text {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
-                            text: "Search…"
+                            text: {
+                                const _ = app.modeString
+                                return app.mode_placeholder()
+                            }
                             color: theme.fg_dim
                             opacity: 0.5
                             font: search.font
@@ -152,6 +169,16 @@ Window {
                             grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
                         }
                         Keys.onPressed: (event) => {
+                            if (event.key === Qt.Key_Tab) {
+                                event.accepted = true
+                                app.cycle_mode(event.modifiers & Qt.ShiftModifier ? -1 : 1)
+                                return
+                            }
+                            if (event.key === Qt.Key_Backtab) {
+                                event.accepted = true
+                                app.cycle_mode(-1)
+                                return
+                            }
                             if (event.key === Qt.Key_PageDown) {
                                 event.accepted = true
                                 if (grid.count === 0) return

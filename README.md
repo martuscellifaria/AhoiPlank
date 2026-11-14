@@ -110,6 +110,21 @@ This is also under development, how extensible it will be. My first config file 
         "screen_height": 420,
         "vertical_position": "center",
 
+        "status_bar_visible": false,
+        "status_bar_position": "bottom",
+        "status_bar_height": 20,
+        "status_bar_gap": 12,
+        "status_bar_pill_padding": 14,
+
+        "layout_margin": 16,
+        "layout_spacing": 12,
+        "search_padding": 8,
+
+        "item_height": 44,
+        "item_padding": 12,
+        "icon_size": 24,
+        "icon_spacing": 10,
+
         "radius_window": 14,
         "radius_item": 8,
         "border_width": 1,
@@ -128,7 +143,11 @@ This is also under development, how extensible it will be. My first config file 
             "fg_dim":    "#a9b1d6",
             "border":    "#7dcfff66",
             "selection": "#7dcfff24",
-            "accent":    "#f7768e"
+            "accent":    "#f7768e",
+
+            "status_bar_bg":   "#1a1b26",
+            "status_bar_fg":   "#c0caf5",
+            "status_bar_pill": "#7dcfff"
         }
     }
 }

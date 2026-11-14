@@ -16,6 +16,9 @@ Item {
     property int fontSize: 12
     property bool fontBold: true
 
+    property string nextModeLabel: "STANDARD"
+    property string prevModeLabel: "SSH"
+
     implicitHeight: barHeight
     implicitWidth: 0
 
@@ -52,6 +55,20 @@ Item {
                 font.pixelSize: root.fontSize
                 font.bold: root.fontBold
             }
+        }
+
+        Text {
+            id: hint
+            anchors.right: parent.right
+            anchors.rightMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            text: "<Tab> " + root.nextModeLabel + "   <Backtab> " + root.prevModeLabel
+            color: root.foreground
+            opacity: 0.55
+            font.family: root.fontFamily
+            font.pixelSize: root.fontSize
+            font.bold: root.fontBold
+            elide: Text.ElideLeft
         }
     }
 }
