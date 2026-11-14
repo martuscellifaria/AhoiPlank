@@ -1,59 +1,57 @@
 import QtQuick
-import QtQuick.Layouts
 
-Rectangle {
+Item {
     id: root
 
     property string mode: "standard"
-    property color background: "#1e1e2e"
+    property color background: "transparent"
     property color foreground: "#cdd6f4"
     property color accent: "#89b4fa"
+    property color accentText: "#1e1e2e"
     property int barHeight: 22
+    property int radius: 3
+    property int pillPadding: 14
+
+    property string fontFamily: "monospace"
+    property int fontSize: 12
+    property bool fontBold: true
 
     implicitHeight: barHeight
-    color: root.background
+    implicitWidth: 0
 
     readonly property string modeLabel: {
         switch (root.mode) {
-            case "standard":  return "NORMAL"
-            case "bookmark":  return "BOOKMARK"
-            case "dotfiles":  return "DOTFILES"
-            case "ssh":       return "SSH"
-            default:          return root.mode.toUpperCase()
+            case "bookmark": return "BOOKMARK"
+            case "dotfiles": return "DOTFILES"
+            case "ssh":      return "SSH"
+            case "standard": return "NORMAL"
+            default:         return root.mode ? root.mode.toUpperCase() : "NORMAL"
         }
     }
 
-    RowLayout {
+    Rectangle {
         anchors.fill: parent
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
-        spacing: 12
+        color: root.background
 
         Rectangle {
-            implicitWidth: modeText.implicitWidth + 14
-            implicitHeight: root.barHeight - 6
-            radius: 3
+            id: pill
+            anchors.left: parent.left
+            anchors.leftMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            width: label.implicitWidth + 2 * root.pillPadding
+            height: label.implicitHeight + 6
+            radius: root.radius
             color: root.accent
 
             Text {
-                id: modeText
+                id: label
                 anchors.centerIn: parent
                 text: root.modeLabel
-                color: root.background
-                font.family: "monospace"
-                font.bold: true
-                font.pixelSize: 12
+                color: root.accentText
+                font.family: root.fontFamily
+                font.pixelSize: root.fontSize
+                font.bold: root.fontBold
             }
-        }
-
-        Item { Layout.fillWidth: true }
-
-        Text {
-            text: root.mode
-            color: root.foreground
-            font.family: "monospace"
-            font.pixelSize: 12
-            opacity: 0.6
         }
     }
 }

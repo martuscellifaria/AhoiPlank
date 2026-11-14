@@ -36,6 +36,21 @@ class GeneralConfig : public QObject {
 
     Q_PROPERTY(bool status_bar_visible READ status_bar_visible NOTIFY changed)
     Q_PROPERTY(QString status_bar_position READ status_bar_position NOTIFY changed)
+    Q_PROPERTY(QColor status_bar_bg READ status_bar_bg NOTIFY changed)
+    Q_PROPERTY(QColor status_bar_fg READ status_bar_fg NOTIFY changed)
+    Q_PROPERTY(QColor status_bar_pill READ status_bar_pill NOTIFY changed)
+    Q_PROPERTY(int status_bar_height READ status_bar_height NOTIFY changed)
+    Q_PROPERTY(int status_bar_gap READ status_bar_gap NOTIFY changed)
+    Q_PROPERTY(int status_bar_pill_padding READ status_bar_pill_padding NOTIFY changed)
+
+    Q_PROPERTY(int layout_margin READ layout_margin NOTIFY changed)
+    Q_PROPERTY(int layout_spacing READ layout_spacing NOTIFY changed)
+    Q_PROPERTY(int search_padding READ search_padding NOTIFY changed)
+
+    Q_PROPERTY(int item_height READ item_height NOTIFY changed)
+    Q_PROPERTY(int item_padding READ item_padding NOTIFY changed)
+    Q_PROPERTY(int icon_size READ icon_size NOTIFY changed)
+    Q_PROPERTY(int icon_spacing READ icon_spacing NOTIFY changed)
 
     Q_PROPERTY(QString text_editor READ text_editor NOTIFY changed)
     Q_PROPERTY(QString terminal READ terminal NOTIFY changed)
@@ -68,6 +83,21 @@ public:
     int columns() const { return columns_; }
     bool status_bar_visible() const { return status_bar_visible_; }
     QString status_bar_position() const { return status_bar_position_; }
+    QColor status_bar_bg() const { return status_bar_bg_; }
+    QColor status_bar_fg() const { return status_bar_fg_; }
+    QColor status_bar_pill() const { return status_bar_pill_; }
+    int status_bar_height() const { return status_bar_height_; }
+    int status_bar_gap() const { return status_bar_gap_; }
+    int status_bar_pill_padding() const { return status_bar_pill_padding_; }
+
+    int layout_margin() const { return layout_margin_; }
+    int layout_spacing() const { return layout_spacing_; }
+    int search_padding() const { return search_padding_; }
+
+    int item_height() const { return item_height_; }
+    int item_padding() const { return item_padding_; }
+    int icon_size() const { return icon_size_; }
+    int icon_spacing() const { return icon_spacing_; }
 
     QString text_editor() const { return text_editor_; }
     QString terminal() const { return terminal_; }
@@ -100,10 +130,25 @@ private:
     int screen_height_ { 420 };
     QString vertical_position_ = "center";
 
+    int columns_ { 1 };
+
     bool status_bar_visible_ { false };
     QString status_bar_position_ = "bottom";
+    QColor status_bar_bg_ { QStringLiteral("#1a1b26") };
+    QColor status_bar_fg_ { QStringLiteral("#c0caf5") };
+    QColor status_bar_pill_ { QStringLiteral("#7dcfff") };
+    int status_bar_height_ { 20 };
+    int status_bar_gap_ { 12 };
+    int status_bar_pill_padding_ { 14 };
 
-    int columns_ { 1 };
+    int layout_margin_ { 16 };
+    int layout_spacing_ { 12 };
+    int search_padding_ { 8 };
+
+    int item_height_ { 44 };
+    int item_padding_ { 12 };
+    int icon_size_ { 24 };
+    int icon_spacing_ { 10 };
 
     QString text_editor_ = "vim";
     QString terminal_ = "";
