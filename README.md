@@ -12,6 +12,7 @@ Its features are:
 - bookmarks mode for opening bookmarks on the browser
 - dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor
 - ssh mode for starting remote sessions on a separate terminal
+- projects mode for jumping to your pinned working projects
 - vim-style status bar
 - mode switcher with Tab/BackTab
 
@@ -226,6 +227,28 @@ ahoiplank --dotfiles
 ```
 
 It will read all directories inside `~/.config`. You will then be able to browse your dotfiles from in your own terminal and editor. These are set in the `config.json` file.
+
+### Projects
+
+```bash
+ahoiplank --projects
+```
+
+It will read all pinned projects inside `~/.config/ahoiplank/projects.json`. Then can you get back to work on them.
+
+#### Pinning projects
+
+You just need to go where your project is located and then use the command:
+
+```bash
+ahoiplank --pin-project
+```
+
+After you are done with it, you can unpin it:
+
+```bash
+ahoiplank --unpin-project
+```
 
 ## Running the daemon on background
 

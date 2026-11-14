@@ -14,7 +14,7 @@ Window {
 
     readonly property int columns: Math.max(1, theme.columns)
     readonly property bool bar_on_top: theme.status_bar_position !== "bottom"
-    readonly property var mode_order: ["standard", "bookmark", "dotfiles", "ssh"]
+    readonly property var mode_order: ["standard", "bookmark", "dotfiles", "ssh", "projects"]
     readonly property int current_mode_index: {
         const i = mode_order.indexOf(app.modeString)
         return i < 0 ? 0 : i

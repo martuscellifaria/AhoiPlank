@@ -3,18 +3,18 @@
 #include "DesktopSource.h"
 #include "DotfilesSource.h"
 #include "SshSource.h"
+#include "ProjectsSource.h"
 #include "BookmarkLauncher.h"
 #include "DesktopLauncher.h"
 #include "DotfileLauncher.h"
 #include "SshLauncher.h"
+#include "ProjectLauncher.h"
 #include <QCoreApplication>
 #include <QRegularExpression>
 #include <algorithm>
 #include <qcontainerfwd.h>
 
-namespace {
-
-double fuzzy_score(const QString& term, const QString& target) {
+static double fuzzy_score(const QString& term, const QString& target) {
     if (term.isEmpty()) {
         return 0.0;
     }
@@ -76,8 +76,7 @@ double fuzzy_score(const QString& term, const QString& target) {
     return score;
 }
 
-double fuzzy_score_multi(const QString& query, const QString& target) {
-    // const QStringList terms = query.split(' ', Qt::SkipEmptyParts);
+static double fuzzy_score_multi(const QString& query, const QString& target) {
     const QStringList terms = query.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
     if (terms.isEmpty()) {
         return 0.0;
@@ -94,23 +93,24 @@ double fuzzy_score_multi(const QString& query, const QString& target) {
     return total;
 }
 
-} // namespace
-
 static_assert(static_cast<int>(EntryModel::Mode::Standard) == 0);
 static_assert(static_cast<int>(EntryModel::Mode::Bookmarks) == 1);
 static_assert(static_cast<int>(EntryModel::Mode::Dotfiles) == 2);
 static_assert(static_cast<int>(EntryModel::Mode::SSH) == 3);
+static_assert(static_cast<int>(EntryModel::Mode::Projects) == 4);
 
 EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
     sources_[static_cast<size_t>(Mode::Standard)]  = std::make_unique<DesktopSource>();
     sources_[static_cast<size_t>(Mode::Bookmarks)] = std::make_unique<BookmarksSource>();
     sources_[static_cast<size_t>(Mode::Dotfiles)]  = std::make_unique<DotfilesSource>();
     sources_[static_cast<size_t>(Mode::SSH)]       = std::make_unique<SshSource>();
+    sources_[static_cast<size_t>(Mode::Projects)]  = std::make_unique<ProjectsSource>();
 
     launchers_[static_cast<size_t>(Mode::Standard)]  = std::make_unique<DesktopLauncher>();
     launchers_[static_cast<size_t>(Mode::Bookmarks)] = std::make_unique<BookmarkLauncher>();
     launchers_[static_cast<size_t>(Mode::Dotfiles)]  = std::make_unique<DotfileLauncher>();
     launchers_[static_cast<size_t>(Mode::SSH)]       = std::make_unique<SshLauncher>();
+    launchers_[static_cast<size_t>(Mode::Projects)]  = std::make_unique<ProjectLauncher>();
 
     rebuild();
 }
@@ -153,7 +153,7 @@ void EntryModel::set_mode(const Mode& mode) {
 }
 
 void EntryModel::cycle_mode(int direction) {
-    const int n = 4;
+    const int n = static_cast<int>(launchers_.size());
     int i = static_cast<int>(mode_);
     i = ((i + direction) % n + n) % n;
     set_mode(static_cast<Mode>(i));
@@ -164,6 +164,7 @@ QString EntryModel::mode_placeholder() const {
         case Mode::Bookmarks: return QStringLiteral("Search bookmarks…");
         case Mode::Dotfiles:  return QStringLiteral("Search dotfiles…");
         case Mode::SSH:       return QStringLiteral("Search SSH hosts…");
+        case Mode::Projects:       return QStringLiteral("Search projects…");
         case Mode::Standard:  return QStringLiteral("Search…");
     }
     return QStringLiteral("Search…");
