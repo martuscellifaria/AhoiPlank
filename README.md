@@ -255,13 +255,13 @@ ahoiplank --unpin-project
 You are also able to run `AhoiPlank` on the background by starting with:
 
 ```bash
-ahoiplank --start-daemon
+ahoiplank --daemon-start
 ```
 
 For stopping it:
 
 ```bash
-ahoiplank --stop-daemon
+ahoiplank --daemon-stop
 ```
 
 These two commands are great for applying to startup and shutdown from your tiling window manager.
