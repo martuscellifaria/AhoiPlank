@@ -6,13 +6,13 @@ It was bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.n
 ![AhoiPlank window](resources/ahoiplank.gif)
 
 Its features are:
-- daemon
 - fuzzy search
 - standard mode for launching desktop applications
 - bookmarks mode for opening bookmarks on the browser
 - dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor
 - ssh mode for starting remote sessions on a separate terminal
 - projects mode for jumping to your pinned working projects
+- instant toggling after warmup
 - vim-style status bar
 - mode switcher with Tab/BackTab
 
@@ -73,7 +73,7 @@ Without the flag, it defaults to Ubuntu.
 This builds the `ahoiplank-dev-<distro>:<architecture>` image for your host architecture and drops you into a shell inside it. The image build takes about 2 minutes on first run and is cached afterward.
 
 > [!NOTE]
-> There is no official Arch Linux on aarch64, so if you want to build using a devcontainer, and then deploy on your Arch Linux on aarch64, you should use the Ubuntu image. This sounds and reads confusing, but is how it works :).
+> There is no official Arch Linux on aarch64, so if you want to build using a devcontainer, and then deploy on your Arch Linux on aarch64, you should use the Ubuntu image.
 
 ### Build AhoiPlank inside the devcontainer
 
@@ -97,74 +97,6 @@ cd build/App
 ```
 
 A vertical list of applications will popup and you can fuzzy find and start it on the current workspace you are into.
-
-## Customizing
-
-Of course, since we are on Linux and using tiling window managers, the next step is having `dotfiles`.
-If you create `config.json` inside `~/.config/ahoiplank/`, you can start tinkering with it.
-This is also under development, how extensible it will be. My first config file looks like:
-
-```json
-{
-    "text_editor": "vim",
-    "terminal": "alacritty",
-    "style": {
-        "screen_width": 640,
-        "screen_height": 420,
-        "vertical_position": "center",
-
-        "status_bar_visible": false,
-        "status_bar_position": "bottom",
-        "status_bar_height": 20,
-        "status_bar_gap": 12,
-        "status_bar_pill_padding": 14,
-
-        "layout_margin": 16,
-        "layout_spacing": 12,
-        "search_padding": 8,
-
-        "item_height": 44,
-        "item_padding": 12,
-        "icon_size": 24,
-        "icon_spacing": 10,
-
-        "radius_window": 14,
-        "radius_item": 8,
-        "border_width": 1,
-
-        "font_family": "monospace",
-        "font_size_search": 18,
-        "font_size_title": 14,
-        "font_size_comment": 11,
-        "font_bold": false,
-        "columns": 1,
-
-        "colors": {
-            "bg":        "#1f2335",
-            "bg_input":  "#1a1b26",
-            "fg":        "#c0caf5",
-            "fg_dim":    "#a9b1d6",
-            "border":    "#7dcfff66",
-            "selection": "#7dcfff24",
-            "accent":    "#f7768e",
-
-            "status_bar_bg":   "#1a1b26",
-            "status_bar_fg":   "#c0caf5",
-            "status_bar_pill": "#7dcfff"
-        }
-    }
-}
-```
-
-## Installing on your system
-
-You have probably already compiled, so the next steps are: 
-
-```bash
-sudo cp build/App/AhoiPlank /usr/local/bin/ahoiplank
-```
-
-Then you will be able to run it with `ahoiplank` from your terminal or add it to your keybindings on your window manager.
 
 ## Additional modes
 
@@ -284,6 +216,22 @@ The following does the trick.
 ```bash
 cp -r dotfiles/ahoiplank ~/.config
 ```
+
+## Customizing
+
+Of course, since we are on Linux and using tiling window managers, the next step is having `dotfiles`.
+If you create `config.json` inside `~/.config/ahoiplank/`, you can start tinkering with it.
+This is also under development, how extensible it will be. You can see a config.json example at [`config.json`](dotfiles/ahoiplank/config.json).
+
+## Installing on your system
+
+You have probably already compiled, so the next steps are: 
+
+```bash
+sudo cp build/App/AhoiPlank /usr/local/bin/ahoiplank
+```
+
+Then you will be able to run it with `ahoiplank` from your terminal or add it to your keybindings on your window manager.
 
 ## Tests
 
