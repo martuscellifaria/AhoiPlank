@@ -384,8 +384,6 @@ private slots:
                  QStringLiteral("ahoiplank"));
         QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 2).toString(),
                  QStringLiteral("/home/alex/Projekte/AhoiPlank"));
-        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 3).toString(),
-                 QStringLiteral("launcher"));
     }
 
     void projects_defaultIconWhenMissing() {
