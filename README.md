@@ -1,5 +1,9 @@
 # AhoiPlank <img src="resources/plank.png" width="30" height="30" alt="icon">
 
+![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?style=flat-square&logo=cplusplus&logoColor=white)
+![Qt 6.5+](https://img.shields.io/badge/Qt-6.5%2B-41CD52?style=flat-square&logo=qt&logoColor=white)
+![Wayland](https://img.shields.io/badge/Wayland-compatible-FFBC00?style=flat-square)
+
 A customizable Wayland launcher built with Qt 6 and QML that looks pretty out of the box.
 It was bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim) and looks like:
 
