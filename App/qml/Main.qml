@@ -81,10 +81,9 @@ Window {
                 nextModeLabel: window.next_mode_label
                 prevModeLabel: window.prev_mode_label
 
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: window.bar_on_top ? parent.top : undefined
-                anchors.bottom: window.bar_on_top ? undefined : parent.bottom
+								x: layout.leftMargin
+								width: layout.width
+								y: window.bar_on_top ? 0 : layout.height - height
             }
 
             ColumnLayout {
