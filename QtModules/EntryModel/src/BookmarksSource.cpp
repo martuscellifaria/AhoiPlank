@@ -36,6 +36,7 @@ QVector<Entry> BookmarksSource::load() {
         if (!e.exec.startsWith("http://") && !e.exec.startsWith("https://")) {
             e.exec = "http://" + e.exec;
         }
+        e.id = e.exec;
         e.comment = o.value("comment").toString();
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {

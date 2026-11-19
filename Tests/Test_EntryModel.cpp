@@ -36,12 +36,17 @@ private slots:
                         "URL=https://example.com\n");
         link_file.close();
 
+        const QString cache_dir = temp_dir_->path() + "/cache";
+        QVERIFY(QDir().mkpath(cache_dir));
+
         qputenv("XDG_DATA_HOME", temp_dir_->path().toUtf8());
         qputenv("XDG_DATA_DIRS", temp_dir_->path().toUtf8());
         qputenv("XDG_CONFIG_HOME", temp_dir_->path().toUtf8());
+        qputenv("XDG_CACHE_HOME", cache_dir.toUtf8());
     }
 
     void init() {
+        qputenv("TERMINAL", "true");
         model_ = std::make_unique<EntryModel>();
     }
 
@@ -50,6 +55,7 @@ private slots:
         if (temp_dir_ && temp_dir_->isValid()) {
             QFile::remove(ssh_config_path());
             QFile::remove(projects_config_path());
+            QFile::remove(frecency_path());
         }
         qunsetenv("TERMINAL");
     }
@@ -58,6 +64,7 @@ private slots:
         qunsetenv("XDG_DATA_HOME");
         qunsetenv("XDG_DATA_DIRS");
         qunsetenv("XDG_CONFIG_HOME");
+        qunsetenv("XDG_CACHE_HOME");
     }
 
     void rowCount_matchesExpectedEntries() {
@@ -547,6 +554,162 @@ private slots:
                  QStringLiteral("wezterm"));
     }
 
+    void frecency_emptyHistorySortsByName() {
+        model_->set_filter("");
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Editor"));
+        QCOMPARE(model_->data(model_->index(1), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Firefox"));
+        QCOMPARE(model_->data(model_->index(2), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Terminal"));
+    }
+
+    void frecency_launchBumpsRank() {
+        model_->set_mode(EntryModel::Mode::SSH);
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Alpha","user":"u","host":"a.example.com"},
+                       {"name":"Beta","user":"u","host":"b.example.com"},
+                       {"name":"Gamma","user":"u","host":"g.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 3);
+
+        model_->set_filter("");
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Alpha"));
+
+        model_->launch(2);
+        model_->set_filter("");
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Gamma"));
+    }
+
+    void frecency_persistsAcrossModelInstances() {
+        model_->set_mode(EntryModel::Mode::SSH);
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Alpha","user":"u","host":"a.example.com"},
+                       {"name":"Beta","user":"u","host":"b.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter("");
+        model_->launch(1);
+        model_.reset();
+
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter("");
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Beta"));
+    }
+
+    void frecency_scopedPerMode() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Alpha","user":"u","host":"a.example.com"},
+                       {"name":"Beta","user":"u","host":"b.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter("");
+        model_->launch(1);
+        model_.reset();
+
+        model_ = std::make_unique<EntryModel>();
+        model_->set_filter("");
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Editor"));
+
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter("");
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Beta"));
+    }
+
+    void frecency_prunedOnMissingEntry() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Alpha","user":"u","host":"a.example.com"},
+                       {"name":"Beta","user":"u","host":"b.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter("");
+        model_->launch(1);
+        model_.reset();
+
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Alpha","user":"u","host":"a.example.com"}
+                   ]})");
+
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        QCOMPARE(model_->rowCount(), 1);
+
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Alpha","user":"u","host":"a.example.com"},
+                       {"name":"Beta","user":"u","host":"b.example.com"}
+                   ]})");
+
+        model_.reset();
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter("");
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Alpha"));
+    }
+
+    void frecency_cappedOnWrite() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Alpha","user":"u","host":"a.example.com"},
+                       {"name":"Beta","user":"u","host":"b.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter("");
+
+        for (int i = 0; i < 250; ++i) {
+            model_->launch(1);
+        }
+        model_.reset();
+
+        QFile f(frecency_path());
+        QVERIFY(f.open(QIODevice::ReadOnly));
+        const QByteArray content = f.readAll();
+        f.close();
+
+        const QJsonObject root = QJsonDocument::fromJson(content).object();
+        const QJsonObject modes = root.value("modes").toObject();
+        const QJsonObject ssh = modes.value("ssh").toObject();
+        const QJsonObject beta = ssh.value("u@b.example.com").toObject();
+
+        QVERIFY(beta.value("count").toInt() <= 200);
+    }
+
+    void frecency_tiebreakInFilteredResults() {
+        write_file(ssh_config_path(),
+                   R"({"ssh":[
+                       {"name":"Prod-A","user":"u","host":"a.example.com"},
+                       {"name":"Prod-B","user":"u","host":"b.example.com"}
+                   ]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::SSH);
+        model_->set_filter("");
+
+        model_->launch(1);
+        model_->set_filter(QStringLiteral("prod"));
+
+        QCOMPARE(model_->rowCount(), 2);
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
+                 QStringLiteral("Prod-B"));
+    }
+
 private:
     QString ssh_config_path() const {
         Q_ASSERT(temp_dir_ && temp_dir_->isValid());
@@ -556,6 +719,11 @@ private:
     QString projects_config_path() const {
         Q_ASSERT(temp_dir_ && temp_dir_->isValid());
         return temp_dir_->path() + "/ahoiplank/projects.json";
+    }
+
+    QString frecency_path() const {
+        Q_ASSERT(temp_dir_ && temp_dir_->isValid());
+        return temp_dir_->path() + "/cache/ahoiplank/frecency.json";
     }
 
     void write_file(const QString& path, const QByteArray& content) {

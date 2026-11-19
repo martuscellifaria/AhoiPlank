@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QSet>
 #include <QStandardPaths>
+#include <qobject.h>
 
 QVector<Entry> DesktopSource::load() {
     QVector<Entry> out;
@@ -38,7 +39,8 @@ bool DesktopSource::parse_desktop(const QString& path, Entry& out) {
     bool is_application = false;
     bool no_display = false;
     bool hidden = false;
-    QString name, exec, comment, icon;
+    QString name, exec, comment, icon, id;
+    id = QFileInfo(path).fileName();
 
     while (!f.atEnd()) {
         const QByteArray line = f.readLine();
@@ -80,10 +82,12 @@ bool DesktopSource::parse_desktop(const QString& path, Entry& out) {
         }
     }
 
+
     if (!is_application || no_display || hidden || name.isEmpty()) { return false; }
 
     out.lower_name = name.toLower();
     out.name = std::move(name);
+    out.id = std::move(id);
     out.exec = std::move(exec);
     out.comment = std::move(comment);
     out.icon = std::move(icon);

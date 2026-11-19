@@ -20,6 +20,7 @@ QVector<Entry> DotfilesSource::load() {
         e.name = name;
         e.exec = config_dir.filePath(name);
         e.comment = e.exec;
+        e.id = e.exec;
         e.icon = QStringLiteral("folder");
         e.lower_name = name.toLower();
         out.append(e);

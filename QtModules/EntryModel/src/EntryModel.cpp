@@ -11,8 +11,13 @@
 #include "ProjectLauncher.h"
 #include <QCoreApplication>
 #include <QRegularExpression>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QFile>
+#include <QDir>
+#include <QSaveFile>
 #include <algorithm>
-#include <qcontainerfwd.h>
+#include <QtContainerFwd>
 
 static double fuzzy_score(const QString& term, const QString& target) {
     if (term.isEmpty()) {
@@ -93,6 +98,11 @@ static double fuzzy_score_multi(const QString& query, const QString& target) {
     return total;
 }
 
+static QString frecency_path() {
+    return QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+           + "/ahoiplank/frecency.json";
+}
+
 static_assert(static_cast<int>(EntryModel::Mode::Standard) == 0);
 static_assert(static_cast<int>(EntryModel::Mode::Bookmarks) == 1);
 static_assert(static_cast<int>(EntryModel::Mode::Dotfiles) == 2);
@@ -112,7 +122,18 @@ EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
     launchers_[static_cast<size_t>(Mode::SSH)]       = std::make_unique<SshLauncher>();
     launchers_[static_cast<size_t>(Mode::Projects)]  = std::make_unique<ProjectLauncher>();
 
+    load_frecency();
+
+    flush_timer_ = new QTimer(this);
+    flush_timer_->setSingleShot(true);
+    flush_timer_->setInterval(30'000);
+    QObject::connect(flush_timer_, &QTimer::timeout, this, &EntryModel::flush_frecency);
+
     rebuild();
+}
+
+EntryModel::~EntryModel() {
+    flush_frecency();
 }
 
 int EntryModel::rowCount(const QModelIndex&) const {
@@ -194,6 +215,20 @@ void EntryModel::rebuild() {
     for (int i = 0; i < all_.size(); ++i) {
         filtered_idx_.append(i);
     }
+
+    std::sort(filtered_idx_.begin(), filtered_idx_.end(),
+              [this](int a, int b) {
+                  const Entry& ea = all_.at(a);
+                  const Entry& eb = all_.at(b);
+                  const double fa = frecency_score(ea);
+                  const double fb = frecency_score(eb);
+                  if (fa != fb) {
+                      return fa > fb;
+                  }
+                  return QString::compare(ea.name, eb.name, Qt::CaseInsensitive) < 0;
+              });
+
+    prune_frecency();
     endResetModel();
 }
 
@@ -256,12 +291,12 @@ void EntryModel::apply_filter_diff(const QVector<int>& new_idx) {
     }
 }
 
-void EntryModel::set_filter(const QString& query) {
-    const QString q = query.trimmed();
-    if (q == current_filter_) {
-        return;
-    }
-    current_filter_ = q;
+QString EntryModel::id_for(const Entry& e) const {
+    return sources_[static_cast<size_t>(mode_)]->id_for(e);
+}
+
+void EntryModel::resort() {
+    const QString q = current_filter_;
     const QString q_lower = q.toLower();
 
     QVector<int> new_idx;
@@ -270,6 +305,17 @@ void EntryModel::set_filter(const QString& query) {
         for (int i = 0; i < all_.size(); ++i) {
             new_idx.append(i);
         }
+        std::sort(new_idx.begin(), new_idx.end(),
+                  [this](int a, int b) {
+                      const Entry& ea = all_.at(a);
+                      const Entry& eb = all_.at(b);
+                      const double fa = frecency_score(ea);
+                      const double fb = frecency_score(eb);
+                      if (fa != fb) {
+                          return fa > fb;
+                      }
+                      return QString::compare(ea.name, eb.name, Qt::CaseInsensitive) < 0;
+                  });
     }
     else {
         scored_buf_.clear();
@@ -281,7 +327,21 @@ void EntryModel::set_filter(const QString& query) {
             }
         }
         std::stable_sort(scored_buf_.begin(), scored_buf_.end(),
-                         [](const auto& a, const auto& b) { return a.score > b.score; });
+                         [this](const auto& a, const auto& b) {
+                             if (a.score != b.score) {
+                                 return a.score > b.score;
+                             }
+
+                             const Entry& ea = all_.at(a.idx);
+                             const Entry& eb = all_.at(b.idx);
+                             const double fa = frecency_score(ea);
+                             const double fb = frecency_score(eb);
+                             if (fa != fb) {
+                                 return fa > fb;
+                             }
+
+                             return QString::compare(ea.name, eb.name, Qt::CaseInsensitive) < 0;
+                         });
         new_idx.reserve(scored_buf_.size());
         for (const auto& p : scored_buf_) {
             new_idx.append(p.idx);
@@ -289,6 +349,15 @@ void EntryModel::set_filter(const QString& query) {
     }
 
     apply_filter_diff(new_idx);
+}
+
+void EntryModel::set_filter(const QString& query) {
+    const QString q = query.trimmed();
+    if (q == current_filter_) {
+        return;
+    }
+    current_filter_ = q;
+    resort();
 }
 
 bool EntryModel::launch(int row) {
@@ -299,6 +368,8 @@ bool EntryModel::launch(int row) {
     const bool ok = launchers_[static_cast<size_t>(mode_)]
                         ->launch(entry, text_editor_, terminal_);
     if (ok) {
+        bump_frecency(entry);
+        resort();
         emit dismissed();
     }
     return ok;
@@ -310,4 +381,140 @@ void EntryModel::quit() {
 
 void EntryModel::dismiss() {
     emit dismissed();
+}
+
+void EntryModel::load_frecency() {
+    QFile f(frecency_path());
+    if (!f.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+    const QJsonObject root = QJsonDocument::fromJson(f.readAll()).object();
+    if (root.isEmpty()) {
+        return;
+    }
+
+    const int version = root.value(QStringLiteral("version")).toInt();
+    if (version != 1) {
+        qWarning() << "frecency: unknown version" << version << "- starting fresh";
+        return;
+    }
+
+    const QJsonObject modes = root.value(QStringLiteral("modes")).toObject();
+    for (auto mode_it = modes.begin(); mode_it != modes.end(); ++mode_it) {
+        const QJsonObject entries = mode_it.value().toObject();
+        QHash<QString, FrecencyRecord>& bucket = frecency_[mode_it.key()];
+
+        for (auto entry_it = entries.begin(); entry_it != entries.end(); ++entry_it) {
+            const QJsonObject rec = entry_it.value().toObject();
+            FrecencyRecord r;
+            r.count     = rec.value(QStringLiteral("count")).toInt();
+            r.last_used = static_cast<qint64>(rec.value(QStringLiteral("last")).toDouble());
+            if (r.count > 0) {
+                bucket.insert(entry_it.key(), r);
+            }
+        }
+    }
+}
+
+void EntryModel::flush_frecency() {
+    QJsonObject modes_obj;
+    for (auto mode_it = frecency_.constBegin(); mode_it != frecency_.constEnd(); ++mode_it) {
+        QJsonObject entries_obj;
+        for (auto entry_it = mode_it.value().constBegin(); entry_it != mode_it.value().constEnd(); ++entry_it) {
+            QJsonObject rec;
+            rec[QStringLiteral("count")] = entry_it.value().count;
+            rec[QStringLiteral("last")]  = static_cast<double>(entry_it.value().last_used);
+            entries_obj[entry_it.key()] = rec;
+        }
+        modes_obj[mode_it.key()] = entries_obj;
+    }
+
+    QJsonObject root;
+    root[QStringLiteral("version")] = 1;
+    root[QStringLiteral("modes")]   = modes_obj;
+
+    const QString path = frecency_path();
+    QDir().mkpath(QFileInfo(path).absolutePath());
+
+    QSaveFile f(path);
+    if (!f.open(QIODevice::WriteOnly)) {
+        qWarning() << "frecency: could not open" << path << "for writing";
+        return;
+    }
+    f.write(QJsonDocument(root).toJson(QJsonDocument::Compact));
+    if (!f.commit()) {
+        qWarning() << "frecency: commit failed for" << path;
+    }
+}
+
+void EntryModel::schedule_flush() {
+    if (flush_timer_ && !flush_timer_->isActive()) {
+        flush_timer_->start();
+    }
+}
+
+void EntryModel::bump_frecency(const Entry& e) {
+    const QString id = id_for(e);
+    if (id.isEmpty()) {
+        return;
+    }
+
+    FrecencyRecord& r = frecency_[mode_string()][id];
+    r.count     = qMin(200, r.count + 1);
+    r.last_used = QDateTime::currentSecsSinceEpoch();
+
+    schedule_flush();
+}
+
+double EntryModel::frecency_score(const Entry& e) const {
+    auto mode_it = frecency_.constFind(mode_string());
+    if (mode_it == frecency_.constEnd()) {
+        return 0.0;
+    }
+    auto rec_it = mode_it.value().constFind(id_for(e));
+    if (rec_it == mode_it.value().constEnd()) {
+        return 0.0;
+    }
+
+    const FrecencyRecord& r = rec_it.value();
+    const qint64 now = QDateTime::currentSecsSinceEpoch();
+    const qint64 age = now - r.last_used;
+
+    double weight;
+    if (age <   6 * 3600) { weight = 100.0; }
+    else if (age <  24 * 3600) { weight = 80.0; }
+    else if (age <   7 * 86400) { weight = 60.0; }
+    else if (age <  30 * 86400) { weight = 40.0; }
+    else if (age <  90 * 86400) { weight = 20.0; }
+    else { weight = 10.0; }
+
+    return r.count * weight;
+}
+
+void EntryModel::prune_frecency() {
+    if (all_.isEmpty()) {
+        return;
+    }
+
+    auto mode_it = frecency_.find(mode_string());
+    if (mode_it == frecency_.end()) {
+        return;
+    }
+
+    QSet<QString> live_ids;
+    live_ids.reserve(all_.size());
+    for (const Entry& e : all_) {
+        live_ids.insert(id_for(e));
+    }
+
+    auto& bucket = mode_it.value();
+    for (auto it = bucket.begin(); it != bucket.end(); ) {
+        if (!live_ids.contains(it.key())) {
+            it = bucket.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
 }

@@ -12,4 +12,5 @@ public:
     virtual ~EntrySource() = default;
 
     virtual QVector<Entry> load() = 0;
+    virtual QString id_for(const Entry& e) const { return e.id; }
 };

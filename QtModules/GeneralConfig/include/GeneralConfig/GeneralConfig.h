@@ -132,7 +132,7 @@ private:
 
     int columns_ { 1 };
 
-    bool status_bar_visible_ { false };
+    bool status_bar_visible_ { true };
     QString status_bar_position_ = "bottom";
     QColor status_bar_bg_ { QStringLiteral("#1a1b26") };
     QColor status_bar_fg_ { QStringLiteral("#c0caf5") };

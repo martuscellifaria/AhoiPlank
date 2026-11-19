@@ -12,7 +12,8 @@
 #include <array>
 #include <cstdint>
 #include <memory>
-#include <qcontainerfwd.h>
+#include <QtContainerFwd>
+#include <QTimer>
 
 namespace TerminalLauncher {
 
@@ -78,6 +79,11 @@ inline bool run_in_terminal_argv(const QString& terminal,
 
 } // namespace TerminalLauncher
 
+struct FrecencyRecord {
+    int count = 0;
+    qint64 last_used = 0;
+};
+
 class EntryModel : public QAbstractListModel {
     Q_OBJECT
     Q_PROPERTY(QString modeString READ mode_string NOTIFY modeChanged)
@@ -111,6 +117,11 @@ public:
     }
 
     explicit EntryModel(QObject* parent = nullptr);
+    EntryModel(const EntryModel&) = delete;
+    EntryModel& operator=(const EntryModel&) = delete;
+    EntryModel(EntryModel&&) noexcept = delete;
+    EntryModel& operator=(EntryModel&&) noexcept = delete;
+    ~EntryModel() override;
 
     int rowCount(const QModelIndex& parent = {}) const override;
     QVariant data(const QModelIndex& idx, int role) const override;
@@ -138,7 +149,16 @@ signals:
 
 private:
     void rebuild();
+    void resort();
     void apply_filter_diff(const QVector<int>& new_idx);
+    QString id_for(const Entry& e) const;
+
+    void load_frecency();
+    void flush_frecency();
+    void schedule_flush();
+    void bump_frecency(const Entry& e);
+    double frecency_score(const Entry& e) const;
+    void prune_frecency();
 
     Mode mode_ = Mode::Standard;
     QString text_editor_ = QStringLiteral("vim");
@@ -154,4 +174,6 @@ private:
 
     std::array<std::unique_ptr<EntrySource>, 5> sources_;
     std::array<std::unique_ptr<EntryLauncher>, 5> launchers_;
+    QHash<QString, QHash<QString, FrecencyRecord>> frecency_;
+    QTimer* flush_timer_ = nullptr;
 };

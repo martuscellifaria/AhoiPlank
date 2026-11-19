@@ -34,6 +34,7 @@ QVector<Entry> ProjectsSource::load() {
         Entry e;
         e.name = o.value("name").toString();
         e.exec = o.value("path").toString();
+        e.id = e.exec;
         e.comment = o.value("path").toString();
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {

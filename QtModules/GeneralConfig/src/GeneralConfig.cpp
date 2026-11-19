@@ -115,7 +115,7 @@ void GeneralConfig::reload() {
     int columns { 1 };
     QString vertical_position = "center";
 
-    bool status_bar_visible { false };
+    bool status_bar_visible { true };
     QString status_bar_position = "bottom";
     QColor status_bar_bg { QStringLiteral("#1a1b26") };
     QColor status_bar_fg { QStringLiteral("#c0caf5") };

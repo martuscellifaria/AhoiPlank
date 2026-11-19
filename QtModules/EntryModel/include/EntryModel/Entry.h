@@ -7,4 +7,5 @@ struct Entry {
     QString comment;
     QString icon;
     QString lower_name;
+    QString id;
 };

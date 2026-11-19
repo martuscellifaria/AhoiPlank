@@ -35,7 +35,7 @@ Window {
         }
     }
 
-    Connections {
+   Connections {
         target: app
         function onResetRequested() {
             search.text = ""
@@ -80,10 +80,9 @@ Window {
                 fontBold: theme.font_bold
                 nextModeLabel: window.next_mode_label
                 prevModeLabel: window.prev_mode_label
-
-								x: layout.leftMargin
-								width: layout.width
-								y: window.bar_on_top ? 0 : layout.height - height
+                x: 0
+                width: layout.width
+                y: window.bar_on_top ? 0 : layout.height - height
             }
 
             ColumnLayout {
