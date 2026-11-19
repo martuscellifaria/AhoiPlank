@@ -362,7 +362,9 @@ void EntryModel::set_filter(const QString& query) {
 
 bool EntryModel::launch(int row) {
     if (row < 0 || row >= filtered_idx_.size()) {
-        return false;
+        if (mode_ != Mode::SSH) {
+            return false;
+        }
     }
     const Entry& entry = all_.at(filtered_idx_.at(row));
     const bool ok = launchers_[static_cast<size_t>(mode_)]
