@@ -71,14 +71,14 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         else if (arg == "--help") {
-            std::println("AhoiPlank is a customizable launcher for Wayland.\n"
-                    "You can find more at https://github.com/martuscellifaria/AhoiPlank\n\n"
+            std::println("ahoiplank is a customizable launcher for Wayland.\n"
+                    "You can find more at https://github.com/martuscellifaria/ahoiplank\n\n"
                     "Usage: ahoiplank [OPTIONAL], "
                     "where [OPTIONAL] is one among the following:\n\n"
                     "    --daemon-start\n"
-                    "\tStarts AhoiPlank daemon in background to better user feel.\n\n"
+                    "\tStarts ahoiplank daemon in background to better user feel.\n\n"
                     "    --daemon-stop\n"
-                    "\tStops AhoiPlank daemon.\n\n"
+                    "\tStops ahoiplank daemon.\n\n"
                     "    --bookmarks\n"
                     "\tOpens the launcher in bookmarks mode.\n\n"
                     "    --dotfiles\n"
@@ -126,13 +126,13 @@ int main(int argc, char* argv[]) {
     }
 
     if (is_wsl()) {
-        std::println(stderr, "AhoiPlank: running on WSL "
+        std::println(stderr, "ahoiplank: running on WSL "
                 "may mess things up. Not starting.");
         return 1;
     }
 
     if (is_ssh()) {
-        std::println(stderr, "AhoiPlank: running on an SSH "
+        std::println(stderr, "ahoiplank: running on an SSH "
                 "session is not the way intended. Not starting");
         return 1;
     }
@@ -160,27 +160,27 @@ int main(int argc, char* argv[]) {
     const QString session_type = qEnvironmentVariable("XDG_SESSION_TYPE");
 
     if (wl_display.isEmpty() || runtime_dir.isEmpty()) {
-        std::println(stderr, "AhoiPlank: WAYLAND_DISPLAY "
+        std::println(stderr, "ahoiplank: WAYLAND_DISPLAY "
                 "or XDG_RUNTIME_DIR not set.");
         return 1;
     }
 
     if (session_type.isEmpty() || session_type != "wayland") {
-        std::println(stderr, "AhoiPlank: XDG_SESSION_TYPE "
+        std::println(stderr, "ahoiplank: XDG_SESSION_TYPE "
                 "not set to wayland.");
         return 1;
     }
 
     const QString wl_socket = QDir(runtime_dir).filePath(wl_display);
     if (!QFile::exists(wl_socket)) {
-        std::println(stderr, "AhoiPlank: no Wayland socket at {}. "
+        std::println(stderr, "ahoiplank: no Wayland socket at {}. "
                 "Please make sure you are on Wayland.", wl_socket.toStdString());
         return 1;
     }
 
     const pid_t pid = ::fork();
     if (pid < 0) {
-        std::println(stderr, "AhoiPlank: fork failed.");
+        std::println(stderr, "ahoiplank: fork failed.");
         return 1;
     }
     if (pid > 0) {
@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
         &app, []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
 
-    engine.loadFromModule("AhoiPlankQml", "Main");
+    engine.loadFromModule("ahoiplankQml", "Main");
 
     if (engine.rootObjects().isEmpty()) {
         return -1;
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
 
     LayerShellQt::Window* layer = LayerShellQt::Window::get(win);
     if (layer) {
-        layer->setScope("AhoiPlank");
+        layer->setScope("ahoiplank");
         layer->setLayer(LayerShellQt::Window::LayerOverlay);
         layer->setKeyboardInteractivity(
             LayerShellQt::Window::KeyboardInteractivityExclusive);

@@ -38,7 +38,9 @@ private slots:
 
         const QString cache_dir = temp_dir_->path() + "/cache";
         QVERIFY(QDir().mkpath(cache_dir));
+        QVERIFY(QDir().mkpath(temp_dir_->path() + "/.ssh"));
 
+        qputenv("HOME", temp_dir_->path().toUtf8());
         qputenv("XDG_DATA_HOME", temp_dir_->path().toUtf8());
         qputenv("XDG_DATA_DIRS", temp_dir_->path().toUtf8());
         qputenv("XDG_CONFIG_HOME", temp_dir_->path().toUtf8());
@@ -53,7 +55,8 @@ private slots:
     void cleanup() {
         model_.reset();
         if (temp_dir_ && temp_dir_->isValid()) {
-            QFile::remove(ssh_config_path());
+            QFile::remove(temp_dir_->path() + "/.ssh/config");
+            QFile::remove(temp_dir_->path() + "/.ssh/known_hosts");
             QFile::remove(projects_config_path());
             QFile::remove(frecency_path());
         }
@@ -61,6 +64,7 @@ private slots:
     }
 
     void cleanupTestCase() {
+        qunsetenv("HOME");
         qunsetenv("XDG_DATA_HOME");
         qunsetenv("XDG_DATA_DIRS");
         qunsetenv("XDG_CONFIG_HOME");
@@ -189,153 +193,68 @@ private slots:
         QCOMPARE(model_->mode(), EntryModel::Mode::SSH);
     }
 
-    void ssh_missingConfigIsEmpty() {
+    void ssh_missingFilesIsEmpty() {
         model_->set_mode(EntryModel::Mode::SSH);
         QCOMPARE(model_->rowCount(), 0);
     }
 
-    void ssh_malformedConfigIsEmpty() {
-        write_file(ssh_config_path(), "{ this is not json");
+    void ssh_emptyFilesIsEmpty() {
+        write_file(temp_dir_->path() + "/.ssh/config", "");
+        write_file(temp_dir_->path() + "/.ssh/known_hosts", "");
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         QCOMPARE(model_->rowCount(), 0);
     }
 
-    void ssh_emptyArrayIsEmpty() {
-        write_file(ssh_config_path(), R"({"ssh":[]})");
+    void ssh_loadsFromConfigAndKnownHosts() {
+        write_file(temp_dir_->path() + "/.ssh/config",
+                   "Host prod\n"
+                   "    HostName prod.example.com\n"
+                   "    User alice\n"
+                   "\n"
+                   "Host *\n"
+                   "    ServerAliveInterval 60\n");
+
+        write_file(temp_dir_->path() + "/.ssh/known_hosts",
+                   "# comment line\n"
+                   "|1|F3a9b8c7d6e5f4a3b2c1d0e9f8a=|9x8y7z6w5v4u3t2s1r0q9p8o7n6= ssh-ed25519 AAAAC3...\n"
+                   "staging.example.com,10.0.0.5 ssh-ed25519 AAAAC3...\n");
+
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
-        QCOMPARE(model_->rowCount(), 0);
+
+        QCOMPARE(model_->rowCount(), 3);
     }
 
-    void ssh_loadsEntries() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod","user":"alice","host":"prod.example.com"},
-                       {"name":"Staging","user":"bob","host":"staging.example.com"}
-                   ]})");
-        model_ = std::make_unique<EntryModel>();
-        model_->set_mode(EntryModel::Mode::SSH);
-        QCOMPARE(model_->rowCount(), 2);
-    }
+    void ssh_configEntryRolesArePopulated() {
+        write_file(temp_dir_->path() + "/.ssh/config",
+                   "Host prod\n"
+                   "    HostName prod.example.com\n"
+                   "    User alice\n");
 
-    void ssh_entryRolesArePopulated() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod","user":"alice","host":"prod.example.com"}
-                   ]})");
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         QCOMPARE(model_->rowCount(), 1);
         QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
-                 QStringLiteral("Prod"));
+                 QStringLiteral("prod"));
         QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 2).toString(),
-                 QStringLiteral("alice@prod.example.com"));
+                 QStringLiteral("alice@prod"));
     }
 
-    void ssh_defaultIconWhenMissing() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod","user":"alice","host":"prod.example.com"}
-                   ]})");
-        model_ = std::make_unique<EntryModel>();
-        model_->set_mode(EntryModel::Mode::SSH);
-        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 4).toString(),
-                 QStringLiteral("network-server"));
-    }
+    void ssh_knownHostBracketedPortIsFormatted() {
+        const QString line = QChar('[') + QStringLiteral("192.168.1.50") + QChar(']')
+                           + QStringLiteral(":2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...\n");
+        write_file(temp_dir_->path() + "/.ssh/known_hosts", line.toUtf8());
 
-    void ssh_customIconIsKept() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod","user":"alice","host":"prod.example.com","icon":"utilities-terminal"}
-                   ]})");
-        model_ = std::make_unique<EntryModel>();
-        model_->set_mode(EntryModel::Mode::SSH);
-        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 4).toString(),
-                 QStringLiteral("utilities-terminal"));
-    }
-
-    void ssh_skipsEntriesWithEmptyName() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"","user":"alice","host":"prod.example.com"},
-                       {"user":"alice","host":"prod.example.com"},
-                       {"name":"Good","user":"alice","host":"good.example.com"}
-                   ]})");
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         QCOMPARE(model_->rowCount(), 1);
         QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
-                 QStringLiteral("Good"));
+                 QStringLiteral("192.168.1.50:2222"));
+        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 2).toString(),
+                 QStringLiteral("192.168.1.50 -p 2222"));
     }
 
-    void ssh_entriesAreSortedCaseInsensitively() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"zulu","user":"u","host":"z.example.com"},
-                       {"name":"Alpha","user":"u","host":"a.example.com"},
-                       {"name":"mike","user":"u","host":"m.example.com"}
-                   ]})");
-        model_ = std::make_unique<EntryModel>();
-        model_->set_mode(EntryModel::Mode::SSH);
-        QCOMPARE(model_->rowCount(), 3);
-        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
-                 QStringLiteral("Alpha"));
-        QCOMPARE(model_->data(model_->index(1), Qt::UserRole + 1).toString(),
-                 QStringLiteral("mike"));
-        QCOMPARE(model_->data(model_->index(2), Qt::UserRole + 1).toString(),
-                 QStringLiteral("zulu"));
-    }
-
-    void ssh_filterMatchesByName() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod","user":"alice","host":"prod.example.com"},
-                       {"name":"Staging","user":"bob","host":"staging.example.com"}
-                   ]})");
-        model_ = std::make_unique<EntryModel>();
-        model_->set_mode(EntryModel::Mode::SSH);
-        model_->set_filter(QStringLiteral("prod"));
-        QCOMPARE(model_->rowCount(), 1);
-        QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 1).toString(),
-                 QStringLiteral("Prod"));
-    }
-
-    void ssh_filterNoMatchReturnsZero() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod","user":"alice","host":"prod.example.com"}
-                   ]})");
-        model_ = std::make_unique<EntryModel>();
-        model_->set_mode(EntryModel::Mode::SSH);
-        model_->set_filter(QStringLiteral("zzzzzzzz"));
-        QCOMPARE(model_->rowCount(), 0);
-    }
-
-    void ssh_switchingAwayAndBackReloads() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod","user":"alice","host":"prod.example.com"}
-                   ]})");
-        model_ = std::make_unique<EntryModel>();
-        model_->set_mode(EntryModel::Mode::SSH);
-        QCOMPARE(model_->rowCount(), 1);
-        model_->set_mode(EntryModel::Mode::Standard);
-        QCOMPARE(model_->rowCount(), 3);
-        model_->set_mode(EntryModel::Mode::SSH);
-        QCOMPARE(model_->rowCount(), 1);
-    }
-
-    void ssh_launchInvalidRowReturnsFalse() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod","user":"alice","host":"prod.example.com"}
-                   ]})");
-        model_ = std::make_unique<EntryModel>();
-        model_->set_mode(EntryModel::Mode::SSH);
-        QCOMPARE(model_->launch(-1), false);
-        QCOMPARE(model_->launch(model_->rowCount()), false);
-    }
 
     void projects_setModeChangesMode() {
         model_->set_mode(EntryModel::Mode::Projects);
@@ -566,12 +485,13 @@ private slots:
 
     void frecency_launchBumpsRank() {
         model_->set_mode(EntryModel::Mode::SSH);
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Alpha","user":"u","host":"a.example.com"},
-                       {"name":"Beta","user":"u","host":"b.example.com"},
-                       {"name":"Gamma","user":"u","host":"g.example.com"}
-                   ]})");
+        write_file(temp_dir_->path() + "/.ssh/config",
+           "Host Alpha\n"
+           "    HostName a.example.com\n"
+           "Host Beta\n"
+           "    HostName b.example.com\n"
+           "Host Gamma\n"
+           "    HostName c.example.com\n");
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         QCOMPARE(model_->rowCount(), 3);
@@ -588,11 +508,14 @@ private slots:
 
     void frecency_persistsAcrossModelInstances() {
         model_->set_mode(EntryModel::Mode::SSH);
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Alpha","user":"u","host":"a.example.com"},
-                       {"name":"Beta","user":"u","host":"b.example.com"}
-                   ]})");
+        write_file(temp_dir_->path() + "/.ssh/config",
+           "Host Alpha\n"
+           "    HostName a.example.com\n"
+           "Host Beta\n"
+           "    HostName b.example.com\n"
+           "Host Gamma\n"
+           "    HostName c.example.com\n");
+
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         model_->set_filter("");
@@ -607,11 +530,13 @@ private slots:
     }
 
     void frecency_scopedPerMode() {
-        write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Alpha","user":"u","host":"a.example.com"},
-                       {"name":"Beta","user":"u","host":"b.example.com"}
-                   ]})");
+        write_file(temp_dir_->path() + "/.ssh/config",
+           "Host Alpha\n"
+           "    HostName a.example.com\n"
+           "Host Beta\n"
+           "    HostName b.example.com\n"
+           "Host Gamma\n"
+           "    HostName c.example.com\n");
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         model_->set_filter("");
@@ -631,10 +556,12 @@ private slots:
 
     void frecency_prunedOnMissingEntry() {
         write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Alpha","user":"u","host":"a.example.com"},
-                       {"name":"Beta","user":"u","host":"b.example.com"}
-                   ]})");
+                   "Host Alpha\n"
+                   "    HostName a.example.com\n"
+                   "    User u\n"
+                   "Host Beta\n"
+                   "    HostName b.example.com\n"
+                   "    User u\n");
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         model_->set_filter("");
@@ -642,19 +569,21 @@ private slots:
         model_.reset();
 
         write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Alpha","user":"u","host":"a.example.com"}
-                   ]})");
+                   "Host Alpha\n"
+                   "    HostName a.example.com\n"
+                   "    User u\n");
 
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         QCOMPARE(model_->rowCount(), 1);
 
         write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Alpha","user":"u","host":"a.example.com"},
-                       {"name":"Beta","user":"u","host":"b.example.com"}
-                   ]})");
+                   "Host Alpha\n"
+                   "    HostName a.example.com\n"
+                   "    User u\n"
+                   "Host Beta\n"
+                   "    HostName b.example.com\n"
+                   "    User u\n");
 
         model_.reset();
         model_ = std::make_unique<EntryModel>();
@@ -666,10 +595,12 @@ private slots:
 
     void frecency_cappedOnWrite() {
         write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Alpha","user":"u","host":"a.example.com"},
-                       {"name":"Beta","user":"u","host":"b.example.com"}
-                   ]})");
+                   "Host Alpha\n"
+                   "    HostName a.example.com\n"
+                   "    User u\n"
+                   "Host Beta\n"
+                   "    HostName b.example.com\n"
+                   "    User u\n");
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         model_->set_filter("");
@@ -687,17 +618,19 @@ private slots:
         const QJsonObject root = QJsonDocument::fromJson(content).object();
         const QJsonObject modes = root.value("modes").toObject();
         const QJsonObject ssh = modes.value("ssh").toObject();
-        const QJsonObject beta = ssh.value("u@b.example.com").toObject();
+        const QJsonObject beta = ssh.value("u@Beta").toObject();
 
         QVERIFY(beta.value("count").toInt() <= 200);
     }
 
     void frecency_tiebreakInFilteredResults() {
         write_file(ssh_config_path(),
-                   R"({"ssh":[
-                       {"name":"Prod-A","user":"u","host":"a.example.com"},
-                       {"name":"Prod-B","user":"u","host":"b.example.com"}
-                   ]})");
+                   "Host Prod-A\n"
+                   "    HostName a.example.com\n"
+                   "    User u\n"
+                   "Host Prod-B\n"
+                   "    HostName b.example.com\n"
+                   "    User u\n");
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::SSH);
         model_->set_filter("");
@@ -713,7 +646,7 @@ private slots:
 private:
     QString ssh_config_path() const {
         Q_ASSERT(temp_dir_ && temp_dir_->isValid());
-        return temp_dir_->path() + "/ahoiplank/ssh.json";
+        return temp_dir_->path() + "/.ssh/config";
     }
 
     QString projects_config_path() const {

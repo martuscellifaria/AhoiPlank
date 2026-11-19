@@ -16,7 +16,7 @@ else()
 	set(PROJECT_DESCRIPTION "Your project is owned by AhoiTools") 
 endif()
 
-project(AhoiPlank VERSION ${PROJECT_VERSION})
+project(ahoiplank VERSION ${PROJECT_VERSION})
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 set(VER_MAJOR ${PROJECT_VERSION_MAJOR})
 set(VER_MINOR ${PROJECT_VERSION_MINOR})

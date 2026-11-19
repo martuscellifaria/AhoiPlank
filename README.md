@@ -1,4 +1,4 @@
-# AhoiPlank <img src="resources/plank.png" width="30" height="30" alt="icon">
+# ahoiplank <img src="resources/plank.png" width="30" height="30" alt="icon">
 
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?style=flat-square&logo=cplusplus&logoColor=white)
 ![Qt 6.5+](https://img.shields.io/badge/Qt-6.5%2B-41CD52?style=flat-square&logo=qt&logoColor=white)
@@ -7,7 +7,7 @@
 A customizable Wayland launcher built with Qt 6 and QML that looks pretty out of the box.
 It was bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.nvim) and looks like:
 
-![AhoiPlank window](resources/ahoiplank.gif)
+![ahoiplank window](resources/ahoiplank.gif)
 
 Its features are:
 - fuzzy search
@@ -53,7 +53,7 @@ The `build.py` script drives CMake. You will get prompted to a menu, so you can 
 python3 build.py
 ```
 
-Binaries land in `build/App/AhoiPlank`.
+Binaries land in `build/App/ahoiplank`.
 
 ## Devcontainer
 
@@ -79,7 +79,7 @@ This builds the `ahoiplank-dev-<distro>:<architecture>` image for your host arch
 > [!NOTE]
 > There is no official Arch Linux on aarch64, so if you want to build using a devcontainer, and then deploy on your Arch Linux on aarch64, you should use the Ubuntu image.
 
-### Build AhoiPlank inside the devcontainer
+### Build ahoiplank inside the devcontainer
 
 From inside the container:
 
@@ -88,16 +88,16 @@ python3 build.py
 ```
 
 The instructions for native build also apply here.
-The binary lands at `/workspace/build/App/AhoiPlank`, which is your project directory mounted from the host.
+The binary lands at `/workspace/build/App/ahoiplank`, which is your project directory mounted from the host.
 
 ## Running the launcher
 
 You need to be on `Wayland`.
-Then you can easily go to the directory where `AhoiPlank` is compiled and run, for example:
+Then you can easily go to the directory where `ahoiplank` is compiled and run, for example:
 
 ```bash
 cd build/App
-./AhoiPlank
+./ahoiplank
 ```
 
 A vertical list of applications will popup and you can fuzzy find and start it on the current workspace you are into.
@@ -118,7 +118,7 @@ It will read from `~/.config/ahoiplank/bookmarks.json`. For example:
 {
   "bookmarks": [
     { 
-        "name": "AhoiPlank", 
+        "name": "ahoiplank", 
         "url": "https://github.com/martuscellifaria/ahoiplank",
         "icon": "zen-browser"
     },
@@ -139,21 +139,8 @@ Select and then it will open on your default browser.
 ahoiplank --ssh
 ```
 
-It will read from `~/.config/ahoiplank/ssh.json`. For example:
+It will read from `~/.ssh/known_hosts`.
 
-```json
-{
-  "ssh": [
-    { 
-        "name": "AlexRemote", 
-        "host": "localhost",
-        "user": "alex",
-        "icon": "network-server"
-    }
-  ]
-}
-
-```
 And then it will start your ssh session on the terminal configured on your `config.json` file.
 
 ### Dotfiles
@@ -174,13 +161,14 @@ It will read all pinned projects inside `~/.config/ahoiplank/projects.json`. The
 
 #### Pinning projects
 
-You just need to go where your project is located and then use the command:
+This is a tiny CLI feature that lets you add projects instead of manually adding entries to your `projects.json` dotfile.
+You just need to go where your working project is located and then use the command:
 
 ```bash
 ahoiplank --pin-project
 ```
 
-After you are done with it, you can unpin it:
+After you are done with it, you can unpin it or remove manually from `projects.json`:
 
 ```bash
 ahoiplank --unpin-project
@@ -188,7 +176,7 @@ ahoiplank --unpin-project
 
 ## Running the daemon on background
 
-You are also able to run `AhoiPlank` on the background by starting with:
+You are also able to run `ahoiplank` on the background by starting with:
 
 ```bash
 ahoiplank --daemon-start
@@ -232,7 +220,7 @@ This is also under development, how extensible it will be. You can see a config.
 You have probably already compiled, so the next steps are: 
 
 ```bash
-sudo cp build/App/AhoiPlank /usr/local/bin/ahoiplank
+sudo cp build/App/ahoiplank /usr/local/bin/ahoiplank
 ```
 
 Then you will be able to run it with `ahoiplank` from your terminal or add it to your keybindings on your window manager.
