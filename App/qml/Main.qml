@@ -14,15 +14,8 @@ Window {
 
     readonly property int columns: Math.max(1, theme.columns)
     readonly property bool bar_on_top: theme.status_bar_position !== "bottom"
-    readonly property var mode_order: ["standard", "bookmark", "dotfiles", "ssh", "projects"]
-    readonly property int current_mode_index: {
-        const i = mode_order.indexOf(app.modeString)
-        return i < 0 ? 0 : i
-    }
-    readonly property string next_mode_label:
-        mode_order[(current_mode_index + 1) % mode_order.length].toUpperCase()
-    readonly property string prev_mode_label:
-        mode_order[(current_mode_index - 1 + mode_order.length) % mode_order.length].toUpperCase()
+    readonly property var mode_order: ["standard", "bookmark", "dotfiles", "ssh", "projects", "scripts"]
+    readonly property int mode_slot_count: Math.min(10, mode_order.length)
 
     onActiveChanged: {
         if (active) {
@@ -35,7 +28,7 @@ Window {
         }
     }
 
-   Connections {
+    Connections {
         target: app
         function onResetRequested() {
             search.text = ""
@@ -43,14 +36,16 @@ Window {
             search.forceActiveFocus()
         }
         function onModeChanged() {
-            search.text = ""
             grid.currentIndex = grid.count > 0 ? 0 : -1
             search.forceActiveFocus()
+            if (search.text !== "") {
+                app.set_filter(search.text)
+            }
         }
     }
 
     Shortcut { sequence: "Esc";    onActivated: app.dismiss() }
-    Shortcut { sequence: "Return"; onActivated: app.launch(grid.currentIndex) }
+    Shortcut { sequence: "Return"; onActivated: app.launch(grid.currentIndex, search.text) }
 
     Rectangle {
         anchors.fill: parent
@@ -78,8 +73,7 @@ Window {
                 fontFamily: theme.font_family
                 fontSize: theme.font_size_comment
                 fontBold: theme.font_bold
-                nextModeLabel: window.next_mode_label
-                prevModeLabel: window.prev_mode_label
+                hintText: "[Alt+1..9]"
                 x: 0
                 width: layout.width
                 y: window.bar_on_top ? 0 : layout.height - height
@@ -142,12 +136,28 @@ Window {
 
                         Keys.onLeftPressed: (event) => {
                             event.accepted = true
+                            if (event.modifiers & Qt.ControlModifier) {
+                                search.cursorPosition = Math.max(0, search.cursorPosition - 1)
+                                return
+                            }
+                            if (event.modifiers & Qt.AltModifier) {
+                                app.cycle_mode(-1)
+                                return
+                            }
                             if (grid.count === 0) return
                             grid.currentIndex = Math.max(0, grid.currentIndex - 1)
                             grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
                         }
                         Keys.onRightPressed: (event) => {
                             event.accepted = true
+                            if (event.modifiers & Qt.ControlModifier) {
+                                search.cursorPosition = Math.min(search.length, search.cursorPosition + 1)
+                                return
+                            }
+                            if (event.modifiers & Qt.AltModifier) {
+                                app.cycle_mode(1)
+                                return
+                            }
                             if (grid.count === 0) return
                             grid.currentIndex = Math.min(grid.count - 1, grid.currentIndex + 1)
                             grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
@@ -167,16 +177,26 @@ Window {
                             grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
                         }
                         Keys.onPressed: (event) => {
-                            if (event.key === Qt.Key_Tab) {
-                                event.accepted = true
-                                app.cycle_mode(event.modifiers & Qt.ShiftModifier ? -1 : 1)
-                                return
+                            if (event.modifiers & Qt.AltModifier) {
+                                let slot = -1
+                                if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9)
+                                    slot = event.key - Qt.Key_1
+                                else if (event.key === Qt.Key_0)
+                                    slot = 9
+                                else if (event.text.length === 1) {
+                                    const c = event.text.charCodeAt(0)
+                                    if (c >= 0x31 && c <= 0x39) slot = c - 0x31
+                                    else if (c === 0x30)         slot = 9
+                                }
+
+                                if (slot >= 0) {
+                                    event.accepted = true
+                                    if (slot < window.mode_slot_count)
+                                        app.set_mode(window.mode_order[slot])
+                                    return
+                                }
                             }
-                            if (event.key === Qt.Key_Backtab) {
-                                event.accepted = true
-                                app.cycle_mode(-1)
-                                return
-                            }
+
                             if (event.key === Qt.Key_PageDown) {
                                 event.accepted = true
                                 if (grid.count === 0) return
@@ -266,7 +286,7 @@ Window {
 
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: app.launch(index)
+                            onClicked: app.launch(index, search.text)
                         }
                     }
                 }

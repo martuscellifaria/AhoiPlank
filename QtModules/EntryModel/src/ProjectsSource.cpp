@@ -38,7 +38,7 @@ QVector<Entry> ProjectsSource::load() {
         e.comment = o.value("path").toString();
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {
-            e.icon = QStringLiteral("nvim");
+            e.icon = QStringLiteral("vim");
         }
         e.lower_name = e.name.toLower();
         if (!e.name.isEmpty() && !e.exec.isEmpty()) {
@@ -47,6 +47,7 @@ QVector<Entry> ProjectsSource::load() {
     }
     return out;
 }
+
 void ProjectsSource::pin_project() {
     const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                          + "/ahoiplank/projects.json";
@@ -164,4 +165,43 @@ void ProjectsSource::unpin_project() {
     }
 
     f.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+}
+
+void ProjectsSource::list_projects() {
+    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+                         + "/ahoiplank/projects.json";
+    if (!QFileInfo::exists(path)) {
+        std::println(stderr, "Cannot find a projects.json file inside ~/.config/ahoiplank/. Exiting.");
+        return;
+    }
+
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) {
+        std::println(stderr, "projects: failed to open {} for reading ({})",
+                     path.toStdString(), f.errorString().toStdString());
+        return;
+    }
+
+    QJsonParseError perr{};
+    QJsonObject root = QJsonDocument::fromJson(f.readAll(), &perr).object();
+    f.close();
+
+    if (perr.error != QJsonParseError::NoError) {
+        std::println(stderr, "projects: {} is not valid json ({})",
+                     path.toStdString(), perr.errorString().toStdString());
+        return;
+    }
+    std::string list = "NAME\t\tPATH";
+    if (!root.isEmpty() && root.contains("projects")) {
+        const QJsonArray arr = root.value("projects").toArray();
+
+        for (const auto& v : arr) {
+            const QJsonObject o = v.toObject();
+            list = std::format("{}\n{}\t{}",
+                    list,
+                    o.value("name").toString().toStdString(),
+                    o.value("path").toString().toStdString());
+        }
+    }
+    std::println("{}", list);
 }

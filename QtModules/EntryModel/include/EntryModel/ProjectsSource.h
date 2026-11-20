@@ -6,4 +6,5 @@ public:
     QVector<Entry> load() override;
     static void pin_project();
     static void unpin_project();
+    static void list_projects();
 };
