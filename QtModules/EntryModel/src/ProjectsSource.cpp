@@ -133,29 +133,37 @@ void ProjectsSource::unpin_project(const QString& project_name) {
         return;
     }
 
-    const QDir cwd = QDir::current();
-    QString name = project_name;
-    if (!name.isEmpty()) {
-        name = cwd.dirName();
-    }
-    const QString project_path = cwd.absolutePath();
-    const QJsonArray arr = root.value("projects").toArray();
     QJsonArray updated;
     bool removed = false;
-
-    for (const auto& v : arr) {
-        const QJsonObject o = v.toObject();
-        if (o.value("path").toString() == project_path &&
-            o.value("name").toString() == name) {
-            removed = true;
-            continue;
+    const QDir cwd = QDir::current();
+    QString name = project_name;
+    const QJsonArray arr = root.value("projects").toArray();
+    if (name.isEmpty()) {
+        name = cwd.dirName();
+        const QString project_path = cwd.absolutePath();
+        for (const auto& v : arr) {
+            const QJsonObject o = v.toObject();
+            if (o.value("path").toString() == project_path &&
+                o.value("name").toString() == name) {
+                removed = true;
+                continue;
+            }
+            updated.append(v);
         }
-        updated.append(v);
     }
-
+    else {
+        for (const auto& v : arr) {
+            const QJsonObject o = v.toObject();
+            if (o.value("name").toString() == name) {
+                removed = true;
+                continue;
+            }
+            updated.append(v);
+        }
+    }
     if (!removed) {
-        std::println(stderr, "Project {} ({}) is not pinned. Exiting.",
-                     name.toStdString(), project_path.toStdString());
+        std::println(stderr, "Project {} is not pinned. Exiting.",
+                     name.toStdString());
         return;
     }
 

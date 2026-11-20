@@ -177,7 +177,15 @@ ahoiplank --unpin-project <Your-Project-Name>
 
 You can list your projects by running
 
+```bash
+ahoiplank --list-projects
 ```
+
+It will return output something like
+```
+NAME            PATH
+ahoiplank       /home/alex/Projekte/AhoiPlank
+ahoicpp.nvim    /home/alex/Projekte/ahoicpp.nvim
 ```
 
 ## Running the daemon on background
