@@ -73,7 +73,7 @@ Window {
                 fontFamily: theme.font_family
                 fontSize: theme.font_size_comment
                 fontBold: theme.font_bold
-                hintText: "[Alt+1..9]"
+                hintText: "[Alt+index]"
                 x: 0
                 width: layout.width
                 y: window.bar_on_top ? 0 : layout.height - height

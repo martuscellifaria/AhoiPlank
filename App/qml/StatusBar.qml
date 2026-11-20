@@ -89,7 +89,7 @@ Item {
                         Text {
                             id: itemText
                             anchors.centerIn: parent
-                            text: root.getModeLabel(modelData)
+                            text: `${index + 1}. ${root.getModeLabel(modelData)}`
                             color: modeDelegate.isActive ? root.accentText : root.foreground
                             opacity: modeDelegate.isActive ? 1.0 : 0.65
                             font.family: root.fontFamily

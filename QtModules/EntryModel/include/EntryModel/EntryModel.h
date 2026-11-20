@@ -145,6 +145,7 @@ public:
     void set_text_editor(const QString& editor) { text_editor_ = editor; }
     void set_terminal(const QString& terminal) { terminal_ = terminal; }
     QString mode_string() const { return mode_to_string(mode_); }
+    QString editor() const { return text_editor_; }
 
 signals:
     void dismissed();

@@ -7,6 +7,5 @@ public:
                 const QString& text_editor,
                 const QString& terminal) override;
 private:
-    void store_script(const Entry& entry);
-
+    bool store_script(const Entry& entry);
 };

@@ -35,6 +35,7 @@ QVector<Entry> ScriptsSource::load() {
         e.exec = o.value("script").toString();
         e.id = e.exec;
         e.comment = o.value("script").toString();
+        e.persistent_terminal = o.value("persistent_terminal").toBool();
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {
             e.icon = QStringLiteral("terminal");

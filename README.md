@@ -10,15 +10,16 @@ It was bootstrapped with [AhoiCpp](https://github.com/martuscellifaria/ahoicpp.n
 ![ahoiplank window](resources/ahoiplank.gif)
 
 Its features are:
-- fuzzy search
-- standard mode for launching desktop applications
+- fuzzy search with frecency
+- normal mode for launching desktop applications
 - bookmarks mode for opening bookmarks on the browser
 - dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor
 - ssh mode for starting remote sessions on a separate terminal
 - projects mode for jumping to your pinned working projects
+- scripts mode for running custom scripts on a terminal
 - instant toggling after warmup
-- vim-style status bar
-- mode switcher with Tab/BackTab
+- vim/tmux-style status bar
+- mode switcher with Alt + index
 
 Currently tested on `sway` and `hyprland`, but should work on other Wayland compositors as well.
 Distros tested were Ubuntu 26.04 and Arch Linux, both on x86_64 and aarch64.
@@ -171,7 +172,12 @@ ahoiplank --pin-project
 After you are done with it, you can unpin it or remove manually from `projects.json`:
 
 ```bash
-ahoiplank --unpin-project
+ahoiplank --unpin-project <Your-Project-Name>
+```
+
+You can list your projects by running
+
+```
 ```
 
 ## Running the daemon on background

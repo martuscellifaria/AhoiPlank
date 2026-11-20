@@ -8,4 +8,5 @@ struct Entry {
     QString icon;
     QString lower_name;
     QString id;
+    bool persistent_terminal = false;
 };

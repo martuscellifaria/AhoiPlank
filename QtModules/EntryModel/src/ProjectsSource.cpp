@@ -38,7 +38,7 @@ QVector<Entry> ProjectsSource::load() {
         e.comment = o.value("path").toString();
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {
-            e.icon = QStringLiteral("vim");
+            e.icon = QStringLiteral("gvim");
         }
         e.lower_name = e.name.toLower();
         if (!e.name.isEmpty() && !e.exec.isEmpty()) {
@@ -95,7 +95,7 @@ void ProjectsSource::pin_project() {
     QJsonObject entry;
     entry.insert("name", project_name);
     entry.insert("path", project_path);
-    arr.append(entry);
+    entry.insert("icon", "gvim");
     root.insert("projects", arr);
 
     QFile f(path);
@@ -108,7 +108,7 @@ void ProjectsSource::pin_project() {
     f.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 
-void ProjectsSource::unpin_project() {
+void ProjectsSource::unpin_project(const QString& project_name) {
     const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                          + "/ahoiplank/projects.json";
     if (!QFileInfo::exists(path)) {
@@ -134,8 +134,11 @@ void ProjectsSource::unpin_project() {
     }
 
     const QDir cwd = QDir::current();
+    QString name = project_name;
+    if (!name.isEmpty()) {
+        name = cwd.dirName();
+    }
     const QString project_path = cwd.absolutePath();
-    const QString project_name = cwd.dirName();
     const QJsonArray arr = root.value("projects").toArray();
     QJsonArray updated;
     bool removed = false;
@@ -143,7 +146,7 @@ void ProjectsSource::unpin_project() {
     for (const auto& v : arr) {
         const QJsonObject o = v.toObject();
         if (o.value("path").toString() == project_path &&
-            o.value("name").toString() == project_name) {
+            o.value("name").toString() == name) {
             removed = true;
             continue;
         }
@@ -152,7 +155,7 @@ void ProjectsSource::unpin_project() {
 
     if (!removed) {
         std::println(stderr, "Project {} ({}) is not pinned. Exiting.",
-                     project_name.toStdString(), project_path.toStdString());
+                     name.toStdString(), project_path.toStdString());
         return;
     }
 

@@ -127,6 +127,11 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         else if (arg == "--unpin-project") {
+            if (argc > 2) {
+                const QString project_name = QString::fromLocal8Bit(argv[2]);
+                ProjectsSource::unpin_project(project_name);
+                return 0;
+            }
             ProjectsSource::unpin_project();
             return 0;
         }

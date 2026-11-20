@@ -1,0 +1,26 @@
+{
+    "scripts": [
+        {
+            "icon": "utilities-terminal",
+            "name": "Python Shell",
+            "script": "python3"
+        },
+        {
+            "icon": "utilities-terminal",
+            "name": "Docker Status",
+            "script": "systemctl status docker.service"
+        },
+        {
+            "icon": "utilities-terminal",
+            "name": "cd ~/Projekte/ahoiplank",
+            "persistent_terminal": true,
+            "script": "cd ~/Projekte/ahoiplank"
+        },
+        {
+            "icon": "utilities-terminal",
+            "name": "node",
+            "persistent_terminal": true,
+            "script": "node"
+        }
+    ]
+}
