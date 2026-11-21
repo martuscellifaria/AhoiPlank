@@ -203,6 +203,7 @@ QString EntryModel::mode_placeholder() const {
         case Mode::Projects:  return QStringLiteral("Search projects…");
         case Mode::Scripts:   return QStringLiteral("Search or run scripts…");
         case Mode::Standard:  return QStringLiteral("Search…");
+        default: break;
     }
     return QStringLiteral("Search…");
 }

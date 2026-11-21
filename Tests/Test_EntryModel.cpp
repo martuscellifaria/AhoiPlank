@@ -58,6 +58,7 @@ private slots:
             QFile::remove(temp_dir_->path() + "/.ssh/config");
             QFile::remove(temp_dir_->path() + "/.ssh/known_hosts");
             QFile::remove(projects_config_path());
+            QFile::remove(scripts_config_path());
             QFile::remove(frecency_path());
         }
         qunsetenv("TERMINAL");
@@ -173,7 +174,7 @@ private slots:
 
     void cycle_mode_visitsAllModesIncludingScripts() {
         QSet<int> seen;
-        const int n = 6;
+        const int n = static_cast<size_t>(EntryModel::Mode::ModesEnd);
         for (int i = 0; i < n; ++i) {
             seen.insert(static_cast<int>(model_->mode()));
             model_->cycle_mode(1);
@@ -255,7 +256,6 @@ private slots:
                  QStringLiteral("192.168.1.50 -p 2222"));
     }
 
-
     void projects_setModeChangesMode() {
         model_->set_mode(EntryModel::Mode::Projects);
         QCOMPARE(model_->mode(), EntryModel::Mode::Projects);
@@ -320,7 +320,7 @@ private slots:
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::Projects);
         QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 4).toString(),
-                 QStringLiteral("vim"));
+                 QStringLiteral("gvim"));
     }
 
     void projects_customIconIsKept() {
@@ -429,6 +429,37 @@ private slots:
         model_->set_mode(EntryModel::Mode::Projects);
         QCOMPARE(model_->launch(-1), false);
         QCOMPARE(model_->launch(model_->rowCount()), false);
+    }
+
+    void scripts_setModeChangesMode() {
+        model_->set_mode(EntryModel::Mode::Scripts);
+        QCOMPARE(model_->mode(), EntryModel::Mode::Scripts);
+    }
+
+    void scripts_missingFilesIsEmpty() {
+        model_->set_mode(EntryModel::Mode::Scripts);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void scripts_malformedConfigIsEmpty() {
+        write_file(scripts_config_path(), "{ this is not json");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Scripts);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void scripts_emptyArrayIsEmpty() {
+        write_file(scripts_config_path(), R"({"scripts":[]})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Scripts);
+        QCOMPARE(model_->rowCount(), 0);
+    }
+
+    void scripts_emptyRootIsEmpty() {
+        write_file(scripts_config_path(), R"({})");
+        model_ = std::make_unique<EntryModel>();
+        model_->set_mode(EntryModel::Mode::Scripts);
+        QCOMPARE(model_->rowCount(), 0);
     }
 
     void shellQuote_plainStringIsWrapped() {
@@ -652,6 +683,11 @@ private:
     QString projects_config_path() const {
         Q_ASSERT(temp_dir_ && temp_dir_->isValid());
         return temp_dir_->path() + "/ahoiplank/projects.json";
+    }
+
+    QString scripts_config_path() const {
+        Q_ASSERT(temp_dir_ && temp_dir_->isValid());
+        return temp_dir_->path() + "/ahoiplank/scripts.json";
     }
 
     QString frecency_path() const {
