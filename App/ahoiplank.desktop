@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AhoiPlank
+Comment=Developer-centered Wayland launcher
+Exec=ahoiplank
+Icon=ahoiplank
+Terminal=false
+Categories=Utility;
+StartupNotify=true

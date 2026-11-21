@@ -1,4 +1,4 @@
-# AhoiPlank <img src="resources/plank.png" width="30" height="30" alt="icon">
+# AhoiPlank <img src="readme_resources/plank.png" width="30" height="30" alt="icon">
 
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?style=flat-square&logo=cplusplus&logoColor=white)
 ![Qt 6.5+](https://img.shields.io/badge/Qt-6.5%2B-41CD52?style=flat-square&logo=qt&logoColor=white)
@@ -7,7 +7,7 @@
 A customizable Wayland launcher built with Qt 6 and QML that looks pretty out of the box.
 It was bootstrapped with [ahoicpp.nvim](https://github.com/martuscellifaria/ahoicpp.nvim) and looks like:
 
-![ahoiplank window](resources/ahoiplank.gif)
+![ahoiplank window](readme_resources/ahoiplank.gif)
 
 Its features are:
 - fuzzy search with frecency
@@ -47,9 +47,25 @@ Install on Ubuntu:
 sudo apt install qt6-base-dev qt6-declarative-dev qt6-wayland libqt6svg6-dev liblayershellqtinterface-dev cmake ninja-build g++-16 wayland-protocols libxkbcommon-dev
 ```
 
+### Build with `cmake`
+
+The process is a straightforward CMake build:
+
+```bash
+cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+Then if you want to install it system-wide:
+
+```bash
+sudo cmake --install build
+```
+
 ### Build with `build.py`
 
-The `build.py` script drives CMake. You will get prompted to a menu, so you can set your build to release, debug, tests, add a version and so on.
+The `build.py` script drives CMake. You will get prompted to a menu, so you can set your build to release, debug, run tests after the build, and so on.
+This process targets developers and produces extra information such as a `compiler_commands.json` file.
 
 ```bash
 python3 build.py
@@ -257,17 +273,17 @@ cp -r dotfiles/ahoiplank ~/.config
 
 A few images of the six modes follow:
 
-![ahoiplank normal mode](resources/ahoiplank-window.png)
+![ahoiplank normal mode](readme_resources/ahoiplank-window.png)
 
-![ahoiplank bookmarks mode](resources/ahoiplank-bookmarks-window.png)
+![ahoiplank bookmarks mode](readme_resources/ahoiplank-bookmarks-window.png)
 
-![ahoiplank dotfiles mode](resources/ahoiplank-dotfiles-window.png)
+![ahoiplank dotfiles mode](readme_resources/ahoiplank-dotfiles-window.png)
 
-![ahoiplank ssh mode](resources/ahoiplank-ssh-window.png)
+![ahoiplank ssh mode](readme_resources/ahoiplank-ssh-window.png)
 
-![ahoiplank projects mode](resources/ahoiplank-projects-window.png)
+![ahoiplank projects mode](readme_resources/ahoiplank-projects-window.png)
 
-![ahoiplank scripts mode](resources/ahoiplank-scripts-window.png)
+![ahoiplank scripts mode](readme_resources/ahoiplank-scripts-window.png)
 
 ## Customizing
 

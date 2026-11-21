@@ -76,27 +76,27 @@ int main(int argc, char* argv[]) {
                     "Usage: ahoiplank [OPTIONAL], "
                     "where [OPTIONAL] is one among the following:\n\n"
                     "    --daemon-start\n"
-                    "\tStarts ahoiplank daemon in background to better user feel.\n\n"
+                    "\tStarts ahoiplank daemon in background to better user feel.\n"
                     "    --daemon-stop\n"
-                    "\tStops ahoiplank daemon.\n\n"
+                    "\tStops ahoiplank daemon.\n"
                     "    --bookmarks\n"
-                    "\tOpens the launcher in bookmarks mode.\n\n"
+                    "\tOpens the launcher in bookmarks mode.\n"
                     "    --dotfiles\n"
-                    "\tOpens the launcher in dotfiles mode.\n\n"
+                    "\tOpens the launcher in dotfiles mode.\n"
                     "    --ssh\n"
-                    "\tOpens the launcher in ssh mode.\n\n"
+                    "\tOpens the launcher in ssh mode.\n"
                     "    --projects\n"
-                    "\tOpens the launcher in projects mode.\n\n"
+                    "\tOpens the launcher in projects mode.\n"
                     "    --scripts\n"
-                    "\tOpens the launcher in scripts mode.\n\n"
+                    "\tOpens the launcher in scripts mode.\n"
                     "    --pin-project\n"
-                    "\tPins project to be displayed at projects mode.\n\n"
-                    "    --unpin-project\n"
-                    "\tUnpins project from the projects mode.\n\n"
+                    "\tPins project to be displayed at projects mode.\n"
+                    "    --unpin-project <project-name>\n"
+                    "\tUnpins project from the projects mode.\n"
                     "    --list-projects\n"
-                    "\tLists project from the projects mode.\n\n"
+                    "\tLists project from the projects mode.\n"
                     "    --version\n"
-                    "\tShows version metadata.\n\n"
+                    "\tShows version metadata.\n"
                     "    --help\n"
                     "\tShows this helper.");
             return 0;
@@ -218,6 +218,8 @@ int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
     QIcon::setThemeName(QStringLiteral("Adwaita"));
+    app.setWindowIcon(QIcon(QStringLiteral(":/icons/plank.png")));
+    app.setDesktopFileName(QStringLiteral("ahoiplank"));
 
     QLocalServer::removeServer(k_socket_name);
     QLocalServer server;
