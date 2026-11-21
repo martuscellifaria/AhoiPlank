@@ -4,11 +4,13 @@
 #include "DotfilesSource.h"
 #include "SshSource.h"
 #include "ProjectsSource.h"
+#include "ScriptsSource.h"
 #include "BookmarkLauncher.h"
 #include "DesktopLauncher.h"
 #include "DotfileLauncher.h"
 #include "SshLauncher.h"
 #include "ProjectLauncher.h"
+#include "ScriptLauncher.h"
 #include <QCoreApplication>
 #include <QRegularExpression>
 #include <QJsonObject>
@@ -108,6 +110,7 @@ static_assert(static_cast<int>(EntryModel::Mode::Bookmarks) == 1);
 static_assert(static_cast<int>(EntryModel::Mode::Dotfiles) == 2);
 static_assert(static_cast<int>(EntryModel::Mode::SSH) == 3);
 static_assert(static_cast<int>(EntryModel::Mode::Projects) == 4);
+static_assert(static_cast<int>(EntryModel::Mode::Scripts) == 5);
 
 EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
     sources_[static_cast<size_t>(Mode::Standard)]  = std::make_unique<DesktopSource>();
@@ -115,12 +118,14 @@ EntryModel::EntryModel(QObject* parent) : QAbstractListModel(parent) {
     sources_[static_cast<size_t>(Mode::Dotfiles)]  = std::make_unique<DotfilesSource>();
     sources_[static_cast<size_t>(Mode::SSH)]       = std::make_unique<SshSource>();
     sources_[static_cast<size_t>(Mode::Projects)]  = std::make_unique<ProjectsSource>();
+    sources_[static_cast<size_t>(Mode::Scripts)]  = std::make_unique<ScriptsSource>();
 
     launchers_[static_cast<size_t>(Mode::Standard)]  = std::make_unique<DesktopLauncher>();
     launchers_[static_cast<size_t>(Mode::Bookmarks)] = std::make_unique<BookmarkLauncher>();
     launchers_[static_cast<size_t>(Mode::Dotfiles)]  = std::make_unique<DotfileLauncher>();
     launchers_[static_cast<size_t>(Mode::SSH)]       = std::make_unique<SshLauncher>();
     launchers_[static_cast<size_t>(Mode::Projects)]  = std::make_unique<ProjectLauncher>();
+    launchers_[static_cast<size_t>(Mode::Scripts)]  = std::make_unique<ScriptLauncher>();
 
     load_frecency();
 
@@ -173,6 +178,16 @@ void EntryModel::set_mode(const Mode& mode) {
     emit modeChanged();
 }
 
+void EntryModel::set_mode(const QString& mode_string) {
+    Mode mode = mode_from_string(mode_string);
+    if (mode == mode_) {
+        return;
+    }
+    mode_ = mode;
+    rebuild();
+    emit modeChanged();
+}
+
 void EntryModel::cycle_mode(int direction) {
     const int n = static_cast<int>(launchers_.size());
     int i = static_cast<int>(mode_);
@@ -184,8 +199,9 @@ QString EntryModel::mode_placeholder() const {
     switch (mode_) {
         case Mode::Bookmarks: return QStringLiteral("Search bookmarks…");
         case Mode::Dotfiles:  return QStringLiteral("Search dotfiles…");
-        case Mode::SSH:       return QStringLiteral("Search SSH hosts…");
-        case Mode::Projects:       return QStringLiteral("Search projects…");
+        case Mode::SSH:       return QStringLiteral("Search or add SSH hosts…");
+        case Mode::Projects:  return QStringLiteral("Search projects…");
+        case Mode::Scripts:   return QStringLiteral("Search or run scripts…");
         case Mode::Standard:  return QStringLiteral("Search…");
     }
     return QStringLiteral("Search…");
@@ -360,11 +376,27 @@ void EntryModel::set_filter(const QString& query) {
     resort();
 }
 
-bool EntryModel::launch(int row) {
+bool EntryModel::launch(int row, const QString& search_input) {
+    bool user_entry = false;
     if (row < 0 || row >= filtered_idx_.size()) {
-        if (mode_ != Mode::SSH) {
+        if ((mode_ == Mode::SSH || mode_ == Mode::Scripts) && !search_input.isEmpty()) {
+            user_entry = true;
+        }
+        else {
             return false;
         }
+    }
+    if (user_entry) {
+        Entry entry;
+        entry.exec = search_input;
+        const bool ok = launchers_[static_cast<size_t>(mode_)]
+                            ->launch(entry, text_editor_, terminal_);
+        if (ok) {
+            bump_frecency(entry);
+            resort();
+            emit dismissed();
+        }
+        return ok;
     }
     const Entry& entry = all_.at(filtered_idx_.at(row));
     const bool ok = launchers_[static_cast<size_t>(mode_)]

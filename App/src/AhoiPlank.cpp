@@ -87,10 +87,14 @@ int main(int argc, char* argv[]) {
                     "\tOpens the launcher in ssh mode.\n\n"
                     "    --projects\n"
                     "\tOpens the launcher in projects mode.\n\n"
+                    "    --scripts\n"
+                    "\tOpens the launcher in scripts mode.\n\n"
                     "    --pin-project\n"
                     "\tPins project to be displayed at projects mode.\n\n"
                     "    --unpin-project\n"
                     "\tUnpins project from the projects mode.\n\n"
+                    "    --list-projects\n"
+                    "\tLists project from the projects mode.\n\n"
                     "    --version\n"
                     "\tShows version metadata.\n\n"
                     "    --help\n"
@@ -115,12 +119,24 @@ int main(int argc, char* argv[]) {
         else if (arg == "--projects") {
             mode = EntryModel::Mode::Projects;
         }
+        else if (arg == "--scripts") {
+            mode = EntryModel::Mode::Scripts;
+        }
         else if (arg == "--pin-project") {
             ProjectsSource::pin_project();
             return 0;
         }
         else if (arg == "--unpin-project") {
+            if (argc > 2) {
+                const QString project_name = QString::fromLocal8Bit(argv[2]);
+                ProjectsSource::unpin_project(project_name);
+                return 0;
+            }
             ProjectsSource::unpin_project();
+            return 0;
+        }
+        else if (arg == "--list-projects") {
+            ProjectsSource::list_projects();
             return 0;
         }
     }

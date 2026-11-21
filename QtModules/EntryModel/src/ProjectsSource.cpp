@@ -38,7 +38,7 @@ QVector<Entry> ProjectsSource::load() {
         e.comment = o.value("path").toString();
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {
-            e.icon = QStringLiteral("nvim");
+            e.icon = QStringLiteral("gvim");
         }
         e.lower_name = e.name.toLower();
         if (!e.name.isEmpty() && !e.exec.isEmpty()) {
@@ -47,6 +47,7 @@ QVector<Entry> ProjectsSource::load() {
     }
     return out;
 }
+
 void ProjectsSource::pin_project() {
     const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                          + "/ahoiplank/projects.json";
@@ -94,7 +95,7 @@ void ProjectsSource::pin_project() {
     QJsonObject entry;
     entry.insert("name", project_name);
     entry.insert("path", project_path);
-    arr.append(entry);
+    entry.insert("icon", "gvim");
     root.insert("projects", arr);
 
     QFile f(path);
@@ -107,7 +108,7 @@ void ProjectsSource::pin_project() {
     f.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 
-void ProjectsSource::unpin_project() {
+void ProjectsSource::unpin_project(const QString& project_name) {
     const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                          + "/ahoiplank/projects.json";
     if (!QFileInfo::exists(path)) {
@@ -132,26 +133,37 @@ void ProjectsSource::unpin_project() {
         return;
     }
 
-    const QDir cwd = QDir::current();
-    const QString project_path = cwd.absolutePath();
-    const QString project_name = cwd.dirName();
-    const QJsonArray arr = root.value("projects").toArray();
     QJsonArray updated;
     bool removed = false;
-
-    for (const auto& v : arr) {
-        const QJsonObject o = v.toObject();
-        if (o.value("path").toString() == project_path &&
-            o.value("name").toString() == project_name) {
-            removed = true;
-            continue;
+    const QDir cwd = QDir::current();
+    QString name = project_name;
+    const QJsonArray arr = root.value("projects").toArray();
+    if (name.isEmpty()) {
+        name = cwd.dirName();
+        const QString project_path = cwd.absolutePath();
+        for (const auto& v : arr) {
+            const QJsonObject o = v.toObject();
+            if (o.value("path").toString() == project_path &&
+                o.value("name").toString() == name) {
+                removed = true;
+                continue;
+            }
+            updated.append(v);
         }
-        updated.append(v);
     }
-
+    else {
+        for (const auto& v : arr) {
+            const QJsonObject o = v.toObject();
+            if (o.value("name").toString() == name) {
+                removed = true;
+                continue;
+            }
+            updated.append(v);
+        }
+    }
     if (!removed) {
-        std::println(stderr, "Project {} ({}) is not pinned. Exiting.",
-                     project_name.toStdString(), project_path.toStdString());
+        std::println(stderr, "Project {} is not pinned. Exiting.",
+                     name.toStdString());
         return;
     }
 
@@ -164,4 +176,43 @@ void ProjectsSource::unpin_project() {
     }
 
     f.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+}
+
+void ProjectsSource::list_projects() {
+    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+                         + "/ahoiplank/projects.json";
+    if (!QFileInfo::exists(path)) {
+        std::println(stderr, "Cannot find a projects.json file inside ~/.config/ahoiplank/. Exiting.");
+        return;
+    }
+
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) {
+        std::println(stderr, "projects: failed to open {} for reading ({})",
+                     path.toStdString(), f.errorString().toStdString());
+        return;
+    }
+
+    QJsonParseError perr{};
+    QJsonObject root = QJsonDocument::fromJson(f.readAll(), &perr).object();
+    f.close();
+
+    if (perr.error != QJsonParseError::NoError) {
+        std::println(stderr, "projects: {} is not valid json ({})",
+                     path.toStdString(), perr.errorString().toStdString());
+        return;
+    }
+    std::string list = "NAME\t\tPATH";
+    if (!root.isEmpty() && root.contains("projects")) {
+        const QJsonArray arr = root.value("projects").toArray();
+
+        for (const auto& v : arr) {
+            const QJsonObject o = v.toObject();
+            list = std::format("{}\n{}\t{}",
+                    list,
+                    o.value("name").toString().toStdString(),
+                    o.value("path").toString().toStdString());
+        }
+    }
+    std::println("{}", list);
 }

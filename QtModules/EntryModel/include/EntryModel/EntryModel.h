@@ -94,16 +94,18 @@ public:
         Bookmarks,
         Dotfiles,
         SSH,
-        Projects
+        Projects,
+        Scripts
     };
 
     static inline QString mode_to_string(Mode m) {
         switch (m) {
             case Mode::Standard:  return QStringLiteral("standard");
-            case Mode::Bookmarks: return QStringLiteral("bookmark");
+            case Mode::Bookmarks: return QStringLiteral("bookmarks");
             case Mode::Dotfiles:  return QStringLiteral("dotfiles");
             case Mode::SSH:       return QStringLiteral("ssh");
             case Mode::Projects:  return QStringLiteral("projects");
+            case Mode::Scripts:  return QStringLiteral("scripts");
         }
         return QStringLiteral("standard");
     }
@@ -113,6 +115,7 @@ public:
         if (s == u"dotfiles") { return Mode::Dotfiles; }
         if (s == u"ssh") { return Mode::SSH; }
         if (s == u"project" || s == u"projects") { return Mode::Projects; }
+        if (s == u"script" || s == u"scripts") { return Mode::Scripts; }
         return Mode::Standard;
     }
 
@@ -128,10 +131,11 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     Q_INVOKABLE void set_filter(const QString& query);
-    Q_INVOKABLE bool launch(int row);
+    Q_INVOKABLE bool launch(int row, const QString& search_input = "");
     Q_INVOKABLE void quit();
     Q_INVOKABLE void dismiss();
     Q_INVOKABLE void set_mode(const Mode& mode);
+    Q_INVOKABLE void set_mode(const QString& mode_string);
     Q_INVOKABLE void cycle_mode(int direction);
     Q_INVOKABLE QString mode_placeholder() const;
     Q_INVOKABLE void reload();
@@ -141,6 +145,7 @@ public:
     void set_text_editor(const QString& editor) { text_editor_ = editor; }
     void set_terminal(const QString& terminal) { terminal_ = terminal; }
     QString mode_string() const { return mode_to_string(mode_); }
+    QString editor() const { return text_editor_; }
 
 signals:
     void dismissed();
@@ -172,8 +177,8 @@ private:
     QVector<Scored> scored_buf_;
     QString current_filter_;
 
-    std::array<std::unique_ptr<EntrySource>, 5> sources_;
-    std::array<std::unique_ptr<EntryLauncher>, 5> launchers_;
+    std::array<std::unique_ptr<EntrySource>, 6> sources_;
+    std::array<std::unique_ptr<EntryLauncher>, 6> launchers_;
     QHash<QString, QHash<QString, FrecencyRecord>> frecency_;
     QTimer* flush_timer_ = nullptr;
 };

@@ -171,21 +171,21 @@ private slots:
         QCOMPARE(model_->rowCount(), 3);
     }
 
-    void cycle_mode_visitsAllModesIncludingProjects() {
+    void cycle_mode_visitsAllModesIncludingScripts() {
         QSet<int> seen;
-        const int n = 5;
+        const int n = 6;
         for (int i = 0; i < n; ++i) {
             seen.insert(static_cast<int>(model_->mode()));
             model_->cycle_mode(1);
         }
         QCOMPARE(seen.size(), n);
-        QVERIFY(seen.contains(static_cast<int>(EntryModel::Mode::Projects)));
+        QVERIFY(seen.contains(static_cast<int>(EntryModel::Mode::Scripts)));
         QCOMPARE(model_->mode(), EntryModel::Mode::Standard);
     }
 
-    void cycle_mode_backwardsFromStandardReachesProjects() {
+    void cycle_mode_backwardsFromStandardReachesScripts() {
         model_->cycle_mode(-1);
-        QCOMPARE(model_->mode(), EntryModel::Mode::Projects);
+        QCOMPARE(model_->mode(), EntryModel::Mode::Scripts);
     }
 
     void ssh_setModeChangesMode() {
@@ -320,7 +320,7 @@ private slots:
         model_ = std::make_unique<EntryModel>();
         model_->set_mode(EntryModel::Mode::Projects);
         QCOMPARE(model_->data(model_->index(0), Qt::UserRole + 4).toString(),
-                 QStringLiteral("nvim"));
+                 QStringLiteral("vim"));
     }
 
     void projects_customIconIsKept() {

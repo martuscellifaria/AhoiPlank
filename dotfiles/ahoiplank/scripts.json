@@ -1,0 +1,10 @@
+{
+    "scripts": [
+        {
+            "icon": "utilities-terminal",
+            "name": "python3",
+            "persistent_terminal": true,
+            "script": "python3"
+        }
+    ]
+}

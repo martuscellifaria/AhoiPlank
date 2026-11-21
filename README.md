@@ -10,15 +10,17 @@ It was bootstrapped with [ahoicpp.nvim](https://github.com/martuscellifaria/ahoi
 ![ahoiplank window](resources/ahoiplank.gif)
 
 Its features are:
-- fuzzy search
-- standard mode for launching desktop applications
+- fuzzy search with frecency
+- normal mode for launching desktop applications
 - bookmarks mode for opening bookmarks on the browser
 - dotfiles mode for opening your dotfiles on your favorite terminal and terminal-based text editor
 - ssh mode for starting remote sessions on a separate terminal
 - projects mode for jumping to your pinned working projects
+- scripts mode for running custom scripts on a terminal
 - instant toggling after warmup
-- vim-style status bar
-- mode switcher with Tab/BackTab
+- vim/tmux-style status bar
+- mode switcher with `Alt + index`
+- for keeping the search bar editable, you can move through it char by char using `Ctrl + left/right`.
 
 Currently tested on `sway` and `hyprland`, but should work on other Wayland compositors as well.
 Distros tested were Ubuntu 26.04 and Arch Linux, both on x86_64 and aarch64.
@@ -141,7 +143,9 @@ ahoiplank --ssh
 
 It will read from `~/.ssh/known_hosts`.
 
-And then it will start your ssh session on the terminal configured on your `config.json` file.
+And then it will start a SSH session on the terminal configured on your `config.json` file.
+
+The SSH mode also accepts user input at the search bar if no result can be found by the fuzzy search. It then tries to start a session with the given address. `ahoiplank` is not aware of wrong typing, as it starts the session as a fire and forget process.
 
 ### Dotfiles
 
@@ -171,12 +175,52 @@ ahoiplank --pin-project
 After you are done with it, you can unpin it or remove manually from `projects.json`:
 
 ```bash
-ahoiplank --unpin-project
+ahoiplank --unpin-project <Your-Project-Name>
 ```
+
+You can list your projects by running
+
+```bash
+ahoiplank --list-projects
+```
+
+It will return output something like:
+```
+NAME            PATH
+ahoiplank       /home/alex/Projekte/AhoiPlank
+ahoicpp.nvim    /home/alex/Projekte/ahoicpp.nvim
+```
+
+### Scripts
+
+The scripts mode allows the user to run and store recurrent commands. Start it with:
+
+```bash
+ahoiplank --scripts
+```
+
+If you type like `python3` at the search bar, it will then start a new instance of your configured terminal with the Python interpreter.
+The command is stored in a new dotfile `.config/ahoiplank/scripts.json` which looks like:
+
+```json
+{
+    "scripts": [
+        {
+            "icon": "utilities-terminal",
+            "name": "python3",
+            "persistent_terminal": true,
+            "script": "python3"
+        }
+    ]
+}
+```
+
+You can then change its name and/or if you want that the terminal instance persists when the script you ran finishes.
+
 
 ## Running the daemon on background
 
-You are also able to run `ahoiplank` on the background by starting with:
+For quick startup, `ahoiplank` can run as a daemon:
 
 ```bash
 ahoiplank --daemon-start
@@ -208,6 +252,22 @@ The following does the trick.
 ```bash
 cp -r dotfiles/ahoiplank ~/.config
 ```
+
+## Screenshots
+
+A few images of the six modes follow:
+
+![ahoiplank normal mode](resources/ahoiplank-window.png)
+
+![ahoiplank bookmarks mode](resources/ahoiplank-bookmarks-window.png)
+
+![ahoiplank dotfiles mode](resources/ahoiplank-dotfiles-window.png)
+
+![ahoiplank ssh mode](resources/ahoiplank-ssh-window.png)
+
+![ahoiplank projects mode](resources/ahoiplank-projects-window.png)
+
+![ahoiplank scripts mode](resources/ahoiplank-scripts-window.png)
 
 ## Customizing
 
