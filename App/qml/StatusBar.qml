@@ -4,7 +4,7 @@ Item {
     id: root
 
     property string mode: "standard"
-    property var modes: ["standard", "bookmark", "dotfiles", "ssh", "projects", "scripts"]
+    property var modes: ["standard", "bookmarks", "dotfiles", "ssh", "projects", "scripts"]
 
     property color background: "transparent"
     property color foreground: "#cdd6f4"
@@ -26,7 +26,7 @@ Item {
 
     function getModeLabel(m) {
         switch (m) {
-            case "bookmark": return "BOOKMARK"
+            case "bookmarks": return "BOOKMARKS"
             case "dotfiles": return "DOTFILES"
             case "ssh":      return "SSH"
             case "projects": return "PROJECTS"
@@ -89,7 +89,7 @@ Item {
                         Text {
                             id: itemText
                             anchors.centerIn: parent
-                            text: `${index + 1}. ${root.getModeLabel(modelData)}`
+                            text: `${index + 1}.${root.getModeLabel(modelData)}`
                             color: modeDelegate.isActive ? root.accentText : root.foreground
                             opacity: modeDelegate.isActive ? 1.0 : 0.65
                             font.family: root.fontFamily

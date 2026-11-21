@@ -14,7 +14,7 @@ Window {
 
     readonly property int columns: Math.max(1, theme.columns)
     readonly property bool bar_on_top: theme.status_bar_position !== "bottom"
-    readonly property var mode_order: ["standard", "bookmark", "dotfiles", "ssh", "projects", "scripts"]
+    readonly property var mode_order: ["standard", "bookmarks", "dotfiles", "ssh", "projects", "scripts"]
     readonly property int mode_slot_count: Math.min(10, mode_order.length)
 
     onActiveChanged: {

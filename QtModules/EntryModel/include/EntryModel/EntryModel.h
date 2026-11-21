@@ -101,7 +101,7 @@ public:
     static inline QString mode_to_string(Mode m) {
         switch (m) {
             case Mode::Standard:  return QStringLiteral("standard");
-            case Mode::Bookmarks: return QStringLiteral("bookmark");
+            case Mode::Bookmarks: return QStringLiteral("bookmarks");
             case Mode::Dotfiles:  return QStringLiteral("dotfiles");
             case Mode::SSH:       return QStringLiteral("ssh");
             case Mode::Projects:  return QStringLiteral("projects");
