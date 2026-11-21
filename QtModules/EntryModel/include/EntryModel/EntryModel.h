@@ -10,6 +10,7 @@
 #include <QProcess>
 #include <QStandardPaths>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <QtContainerFwd>
@@ -95,7 +96,8 @@ public:
         Dotfiles,
         SSH,
         Projects,
-        Scripts
+        Scripts,
+        ModesEnd
     };
 
     static inline QString mode_to_string(Mode m) {
@@ -106,6 +108,7 @@ public:
             case Mode::SSH:       return QStringLiteral("ssh");
             case Mode::Projects:  return QStringLiteral("projects");
             case Mode::Scripts:  return QStringLiteral("scripts");
+            default: break;
         }
         return QStringLiteral("standard");
     }
@@ -177,8 +180,8 @@ private:
     QVector<Scored> scored_buf_;
     QString current_filter_;
 
-    std::array<std::unique_ptr<EntrySource>, 6> sources_;
-    std::array<std::unique_ptr<EntryLauncher>, 6> launchers_;
+    std::array<std::unique_ptr<EntrySource>, static_cast<size_t>(Mode::ModesEnd)> sources_;
+    std::array<std::unique_ptr<EntryLauncher>, static_cast<size_t>(Mode::ModesEnd)> launchers_;
     QHash<QString, QHash<QString, FrecencyRecord>> frecency_;
     QTimer* flush_timer_ = nullptr;
 };
