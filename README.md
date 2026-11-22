@@ -80,7 +80,7 @@ nix build .#
 To install it into your profile:
 
 ```bash
-nix profile install .#
+nix profile add .#
 ```
 
 A dev shell with all build dependencies is also available:
