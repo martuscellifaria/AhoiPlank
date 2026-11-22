@@ -43,10 +43,6 @@
               $out/share/icons/hicolor/256x256/apps/ahoiplank.png
           '';
 
-          postFixup = ''
-            wrapQtApp $out/bin/ahoiplank
-          '';
-
           meta = with pkgs.lib; {
             description = "A customizable multi-mode launcher for Wayland compositors centered on developer experience and looking good.";
             homepage = "https://github.com/martuscellifaria/ahoiplank";
