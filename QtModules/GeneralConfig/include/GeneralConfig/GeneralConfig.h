@@ -104,6 +104,8 @@ public:
 
     void reload();
 
+    static bool generate_config_dotfile();
+
 signals:
     void changed();
 
@@ -151,5 +153,5 @@ private:
     int icon_spacing_ { 10 };
 
     QString text_editor_ = "vim";
-    QString terminal_ = "";
+    QString terminal_ = "alacritty";
 };
