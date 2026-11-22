@@ -21,34 +21,41 @@
             cmake
             ninja
             pkg-config
+            wayland-scanner
             qt6.wrapQtAppsHook
+            makeShellWrapper
           ];
 
           buildInputs = with pkgs; [
             qt6.qtbase
             qt6.qtdeclarative
             qt6.qtwayland
-	    qt6.qtsvg
+            qt6.qtsvg
             kdePackages.layer-shell-qt
-	    wayland
-	    libxkbcommon
+            wayland
+            wayland-protocols
+            libxkbcommon
           ];
 
           cmakeFlags = [
             "-DCMAKE_BUILD_TYPE=Release"
-            "-GNinja"
           ];
 
           postInstall = ''
-            install -Dm644 ${./App/ahoiplank.desktop} \
+            install -Dm644 $src/App/ahoiplank.desktop \
               $out/share/applications/ahoiplank.desktop
-            install -Dm644 ${./App/resources/plank.png} \
+            install -Dm644 $src/App/resources/plank.png \
               $out/share/icons/hicolor/256x256/apps/ahoiplank.png
+          '';
+
+          postFixup = ''
+            wrapProgram $out/bin/ahoiplank \
+              --run 'if [ ! -e /etc/NIXOS ] && [ -z "$LIBGL_DRIVERS_PATH" ] && [ -z "$QT_QUICK_BACKEND" ]; then export QT_QUICK_BACKEND=software; fi'
           '';
 
           meta = with pkgs.lib; {
             description = "A customizable multi-mode launcher for Wayland compositors centered on developer experience and looking good.";
-            homepage = "https://github.com/martuscellifaria/ahoiplank";
+            homepage = "https://github.com";
             license = licenses.gpl3Plus;
             mainProgram = "ahoiplank";
             platforms = platforms.linux;
@@ -60,3 +67,4 @@
         };
       });
 }
+
