@@ -27,12 +27,13 @@
           buildInputs = with pkgs; [
             qt6.qtbase
             qt6.qtdeclarative
+            qt6.qtwayland
             kdePackages.layer-shell-qt
           ];
 
           cmakeFlags = [
             "-DCMAKE_BUILD_TYPE=Release"
-	    "-G" "Ninja"
+            "-GNinja"
           ];
 
           postInstall = ''
@@ -42,10 +43,14 @@
               $out/share/icons/hicolor/256x256/apps/ahoiplank.png
           '';
 
+          postFixup = ''
+            wrapQtApp $out/bin/ahoiplank
+          '';
+
           meta = with pkgs.lib; {
             description = "A customizable multi-mode launcher for Wayland compositors centered on developer experience and looking good.";
             homepage = "https://github.com/martuscellifaria/ahoiplank";
-            license = licenses.gpl3;
+            license = licenses.gpl3Plus;
             mainProgram = "ahoiplank";
             platforms = platforms.linux;
           };
