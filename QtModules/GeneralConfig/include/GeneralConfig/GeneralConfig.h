@@ -121,7 +121,7 @@ private:
     QString font_family_ { QStringLiteral("monospace") };
     int font_size_search_ { 18 };
     int font_size_title_ { 14 };
-    int font_size_comment_ { 11 };
+    int font_size_comment_ { 10 };
     bool font_bold_ { false };
 
     int radius_window_ { 14 };

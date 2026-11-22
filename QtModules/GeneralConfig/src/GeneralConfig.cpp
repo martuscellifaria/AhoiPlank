@@ -103,7 +103,7 @@ void GeneralConfig::reload() {
     QString font_family       { QStringLiteral("monospace") };
     int font_size_search  { 18 };
     int font_size_title   { 14 };
-    int font_size_comment { 11 };
+    int font_size_comment { 10 };
     bool font_bold { false };
 
     int radius_window { 14 };
@@ -273,7 +273,7 @@ bool GeneralConfig::generate_config_dotfile() {
         { QStringLiteral("font_family"), QStringLiteral("monospace") },
         { QStringLiteral("font_size_search"), 18 },
         { QStringLiteral("font_size_title"), 14 },
-        { QStringLiteral("font_size_comment"), 11 },
+        { QStringLiteral("font_size_comment"), 10 },
         { QStringLiteral("font_bold"), false },
         { QStringLiteral("radius_window"), 14 },
         { QStringLiteral("radius_item"), 8 },
