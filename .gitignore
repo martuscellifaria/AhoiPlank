@@ -31,5 +31,21 @@ App/version.h
 App/version.c
 App/version.rc
 
+PKGBUILD
+.SRCINFO
+src/
+pkg/
+*.pkg.tar.zst
+*.pkg.tar.xz
+*.pkg.tar.gz
+
+ahoiplank-*.tar.gz
+result
+
+flatpak-build/
+flatpak-repo/
+.flatpak-builder/
+*.flatpak
+
 __pycache__/
 *.pyc

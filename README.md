@@ -62,6 +62,33 @@ Then if you want to install it system-wide:
 sudo cmake --install build
 ```
 
+### Build with `nix`
+
+If you use Nix (flakes enabled works on NixOS or any distro with Nix installed), the flake in this repo builds and runs `ahoiplank` with no host dependencies:
+
+```bash
+nix run github:martuscellifaria/ahoiplank
+```
+
+Or, from a cloned checkout:
+
+```bash
+nix build .#
+./result/bin/ahoiplank
+```
+
+To install it into your profile:
+
+```bash
+nix profile install .#
+```
+
+A dev shell with all build dependencies is also available:
+
+```bash
+nix develop
+```
+
 ### Build with `build.py`
 
 The `build.py` script drives CMake. You will get prompted to a menu, so you can set your build to release, debug, run tests after the build, and so on.
