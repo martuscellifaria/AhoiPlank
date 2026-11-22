@@ -103,7 +103,7 @@ void GeneralConfig::reload() {
     QString font_family       { QStringLiteral("monospace") };
     int font_size_search  { 18 };
     int font_size_title   { 14 };
-    int font_size_comment { 11 };
+    int font_size_comment { 10 };
     bool font_bold { false };
 
     int radius_window { 14 };
@@ -134,7 +134,7 @@ void GeneralConfig::reload() {
     int icon_spacing { 10 };
 
     QString text_editor = "vim";
-    QString terminal = "";
+    QString terminal = "alacritty";
 
     QFile f(config_path());
     if (f.open(QIODevice::ReadOnly)) {
@@ -243,3 +243,69 @@ void GeneralConfig::reload() {
 
     emit changed();
 }
+
+bool GeneralConfig::generate_config_dotfile() {
+    const QString path = config_path();
+    if (QFileInfo::exists(path)) {
+        return false;
+    }
+
+    const QFileInfo info(path);
+    if (!QDir().mkpath(info.absolutePath())) {
+        return false;
+    }
+
+    const QJsonObject colors {
+        { QStringLiteral("bg"), QStringLiteral("#1f2335") },
+        { QStringLiteral("bg_input"), QStringLiteral("#1a1b26") },
+        { QStringLiteral("fg"), QStringLiteral("#c0caf5") },
+        { QStringLiteral("fg_dim"), QStringLiteral("#a9b1d6") },
+        { QStringLiteral("border"), QStringLiteral("#667dcfff") },
+        { QStringLiteral("selection"), QStringLiteral("#247aa2f7") },
+        { QStringLiteral("accent"), QStringLiteral("#f7768e") },
+        { QStringLiteral("status_bar_bg"), QStringLiteral("#1a1b26") },
+        { QStringLiteral("status_bar_fg"), QStringLiteral("#c0caf5") },
+        { QStringLiteral("status_bar_pill"), QStringLiteral("#7dcfff") }
+    };
+
+    const QJsonObject style {
+        { QStringLiteral("colors"), colors },
+        { QStringLiteral("font_family"), QStringLiteral("monospace") },
+        { QStringLiteral("font_size_search"), 18 },
+        { QStringLiteral("font_size_title"), 14 },
+        { QStringLiteral("font_size_comment"), 10 },
+        { QStringLiteral("font_bold"), false },
+        { QStringLiteral("radius_window"), 14 },
+        { QStringLiteral("radius_item"), 8 },
+        { QStringLiteral("border_width"), 1 },
+        { QStringLiteral("screen_width"), 640 },
+        { QStringLiteral("screen_height"), 420 },
+        { QStringLiteral("columns"), 1 },
+        { QStringLiteral("vertical_position"), QStringLiteral("center") },
+        { QStringLiteral("status_bar_visible"), true },
+        { QStringLiteral("status_bar_position"), QStringLiteral("bottom") },
+        { QStringLiteral("status_bar_height"), 20 },
+        { QStringLiteral("status_bar_gap"), 12 },
+        { QStringLiteral("status_bar_pill_padding"), 14 },
+        { QStringLiteral("layout_margin"), 16 },
+        { QStringLiteral("layout_spacing"), 12 },
+        { QStringLiteral("search_padding"), 8 },
+        { QStringLiteral("item_height"), 44 },
+        { QStringLiteral("item_padding"), 12 },
+        { QStringLiteral("icon_size"), 24 },
+        { QStringLiteral("icon_spacing"), 10 }
+    };
+
+    const QJsonObject root {
+        { QStringLiteral("text_editor"), QStringLiteral("vim") },
+        { QStringLiteral("terminal"), QStringLiteral("alacritty") },
+        { QStringLiteral("style"), style }
+    };
+
+    QFile file(path);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    }
+    return true;
+}
+

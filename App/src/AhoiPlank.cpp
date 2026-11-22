@@ -1,3 +1,4 @@
+#include "BookmarksSource.h"
 #include "version.h"
 #include "EntryModel.h"
 #include "ProjectsSource.h"
@@ -294,6 +295,9 @@ int main(int argc, char* argv[]) {
 
         layer->setMargins(QMargins(0, margin_top, 0, 0));
     };
+
+    GeneralConfig::generate_config_dotfile();
+    BookmarksSource::generate_bookmarks_dotfile();
 
     QTimer::singleShot(0, win, apply_margins);
 

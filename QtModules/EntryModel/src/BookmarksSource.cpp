@@ -4,6 +4,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStandardPaths>
+#include <QDir>
+#include <QFileInfo>
 #include <print>
 
 QVector<Entry> BookmarksSource::load() {
@@ -48,4 +50,34 @@ QVector<Entry> BookmarksSource::load() {
         }
     }
     return out;
+}
+
+bool BookmarksSource::generate_bookmarks_dotfile() {
+    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+                         + QStringLiteral("/ahoiplank/bookmarks.json");
+
+    if (QFileInfo::exists(path)) {
+        return false;
+    }
+
+    const QFileInfo info(path);
+    if (!QDir().mkpath(info.absolutePath())) {
+        return false;
+    }
+
+    const QJsonObject ahoiplank{
+        { QStringLiteral("name"), QStringLiteral("ahoiplank") },
+        { QStringLiteral("url"),  QStringLiteral("https://github.com/martuscellifaria/ahoiplank") },
+        { QStringLiteral("icon"), QStringLiteral("zen-browser") }
+    };
+
+    const QJsonObject root{
+        { QStringLiteral("bookmarks"), QJsonArray{ ahoiplank } }
+    };
+
+    QFile file(path);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    }
+    return true;
 }

@@ -104,6 +104,8 @@ public:
 
     void reload();
 
+    static bool generate_config_dotfile();
+
 signals:
     void changed();
 
@@ -119,7 +121,7 @@ private:
     QString font_family_ { QStringLiteral("monospace") };
     int font_size_search_ { 18 };
     int font_size_title_ { 14 };
-    int font_size_comment_ { 11 };
+    int font_size_comment_ { 10 };
     bool font_bold_ { false };
 
     int radius_window_ { 14 };
@@ -151,5 +153,5 @@ private:
     int icon_spacing_ { 10 };
 
     QString text_editor_ = "vim";
-    QString terminal_ = "";
+    QString terminal_ = "alacritty";
 };
