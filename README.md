@@ -64,20 +64,26 @@ sudo cmake --install build
 
 ### Build with `nix`
 
-If you use Nix (flakes enabled works on NixOS or any distro with Nix installed), the flake in this repo builds and runs `ahoiplank` with no host dependencies:
+If you use Nix (as package manager or as NixOS with flakes enabled), the flake in this repo builds and runs `ahoiplank` with no host dependencies:
 
 ```bash
 nix run github:martuscellifaria/ahoiplank
 ```
 
-Or, from a cloned checkout:
+Or install it permanently:
+
+```bash
+nix profile add github:martuscellifaria/ahoiplank
+```
+
+If you want to build the cloned repo instead:
 
 ```bash
 nix build .#
 ./result/bin/ahoiplank
 ```
 
-To install it into your profile:
+To install the build into your profile:
 
 ```bash
 nix profile add .#
