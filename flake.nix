@@ -30,6 +30,8 @@
             qt6.qtwayland
 	    qt6.qtsvg
             kdePackages.layer-shell-qt
+	    wayland
+	    libxkbcommon
           ];
 
           cmakeFlags = [
