@@ -28,6 +28,7 @@
             qt6.qtbase
             qt6.qtdeclarative
             qt6.qtwayland
+	    qt6.qtsvg
             kdePackages.layer-shell-qt
           ];
 
