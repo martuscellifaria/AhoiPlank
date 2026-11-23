@@ -163,7 +163,7 @@ Besides the standard desktop launcher mode, `ahoiplank` can also be launched in 
 ahoiplank --bookmarks
 ```
 
-It will read from `~/.config/ahoiplank/bookmarks.json`. For example:
+It will read from `$XDG_CONFIG_HOME/ahoiplank/bookmarks.json`. For example:
 
 ```json
 {
@@ -202,7 +202,7 @@ The SSH mode also accepts user input at the search bar if no result can be found
 ahoiplank --dotfiles
 ```
 
-It will read all directories inside `~/.config`. You will then be able to browse your dotfiles from in your own terminal and editor. These are set in the `config.json` file.
+It will read all directories inside `$XDG_CONFIG_HOME`. You will then be able to browse your dotfiles from in your own terminal and editor. These are set in the `config.json` file.
 
 ### Projects
 
@@ -210,7 +210,7 @@ It will read all directories inside `~/.config`. You will then be able to browse
 ahoiplank --projects
 ```
 
-It will read all pinned projects inside `~/.config/ahoiplank/projects.json`. Then can you get back to work on them.
+It will read all pinned projects inside `$XDG_CONFIG_HOME/ahoiplank/projects.json`. Then can you get back to work on them.
 
 #### Pinning projects
 
@@ -249,7 +249,7 @@ ahoiplank --scripts
 ```
 
 If you type like `python3` at the search bar, it will then start a new instance of your configured terminal with the Python interpreter.
-The command is stored in a new dotfile `.config/ahoiplank/scripts.json` which looks like:
+The command is stored in a new dotfile `$XDG_HOME_CONFIG/ahoiplank/scripts.json` which looks like:
 
 ```json
 {
@@ -299,7 +299,8 @@ This repo also contains three example dotfiles. They are located at the `dotfile
 The following does the trick.
 
 ```bash
-cp -r dotfiles/ahoiplank ~/.config
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/ahoiplank"
+cp dotfiles/ahoiplank/config.json "${XDG_CONFIG_HOME:-$HOME/.config}/ahoiplank/"
 ```
 
 ## Screenshots
@@ -321,7 +322,7 @@ A few images of the six modes follow:
 ## Customizing
 
 Of course, since we are on Linux and using tiling window managers, the next step is having `dotfiles`.
-If you create `config.json` inside `~/.config/ahoiplank/`, you can start tinkering with it.
+If you create `config.json` inside `$XDG_CONFIG_HOME/ahoiplank/`, you can start tinkering with it.
 This is also under development, how extensible it will be. You can see a config.json example at [`config.json`](dotfiles/ahoiplank/config.json).
 
 ## Installing on your system
