@@ -96,6 +96,7 @@ void ProjectsSource::pin_project() {
     entry.insert("name", project_name);
     entry.insert("path", project_path);
     entry.insert("icon", "gvim");
+    arr.append(entry);
     root.insert("projects", arr);
 
     QFile f(path);
