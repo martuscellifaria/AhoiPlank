@@ -62,7 +62,9 @@ Window {
             StatusBar {
                 id: status_bar
                 visible: theme.status_bar_visible
+                barStyle: theme.status_bar_style || "tmux"
                 mode: app.modeString
+                modes: window.mode_order
                 background: theme.status_bar_bg
                 foreground: theme.status_bar_fg
                 accent: theme.status_bar_pill
@@ -73,7 +75,7 @@ Window {
                 fontFamily: theme.font_family
                 fontSize: theme.font_size_comment
                 fontBold: theme.font_bold
-                hintText: "[Alt+index]"
+                hintText: isVimStyle ? "[Alt+←/→]" : "[Alt+index]"
                 x: 0
                 width: layout.width
                 y: window.bar_on_top ? 0 : layout.height - height
@@ -140,7 +142,7 @@ Window {
                                 search.cursorPosition = Math.max(0, search.cursorPosition - 1)
                                 return
                             }
-                            if (event.modifiers & Qt.AltModifier) {
+                            if (status_bar.isVimStyle && (event.modifiers & Qt.AltModifier)) {
                                 app.cycle_mode(-1)
                                 return
                             }
@@ -154,7 +156,7 @@ Window {
                                 search.cursorPosition = Math.min(search.length, search.cursorPosition + 1)
                                 return
                             }
-                            if (event.modifiers & Qt.AltModifier) {
+                            if (status_bar.isVimStyle && (event.modifiers & Qt.AltModifier)) {
                                 app.cycle_mode(1)
                                 return
                             }
@@ -177,7 +179,7 @@ Window {
                             grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
                         }
                         Keys.onPressed: (event) => {
-                            if (event.modifiers & Qt.AltModifier) {
+                            if (!status_bar.isVimStyle && (event.modifiers & Qt.AltModifier)) {
                                 let slot = -1
                                 if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9)
                                     slot = event.key - Qt.Key_1
@@ -185,30 +187,15 @@ Window {
                                     slot = 9
                                 else if (event.text.length === 1) {
                                     const c = event.text.charCodeAt(0)
-                                    if (c >= 0x31 && c <= 0x39) slot = c - 0x31
-                                    else if (c === 0x30)         slot = 9
+                                    if (c >= 0x31 && c <= 0x39)
+                                        slot = c - 0x31
+                                    else if (c === 0x30)
+                                        slot = 9
                                 }
-
-                                if (slot >= 0) {
+                                if (slot >= 0 && slot < window.mode_slot_count) {
                                     event.accepted = true
-                                    if (slot < window.mode_slot_count)
-                                        app.set_mode(window.mode_order[slot])
-                                    return
+                                    app.set_mode(window.mode_order[slot])
                                 }
-                            }
-
-                            if (event.key === Qt.Key_PageDown) {
-                                event.accepted = true
-                                if (grid.count === 0) return
-                                const step = 5 * columns
-                                grid.currentIndex = Math.min(grid.currentIndex + step, grid.count - 1)
-                                grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
-                            } else if (event.key === Qt.Key_PageUp) {
-                                event.accepted = true
-                                if (grid.count === 0) return
-                                const step = 5 * columns
-                                grid.currentIndex = Math.max(grid.currentIndex - step, 0)
-                                grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
                             }
                         }
                     }

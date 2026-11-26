@@ -7,5 +7,5 @@ public:
                 const QString& text_editor,
                 const QString& terminal) override;
 private:
-    bool store_script(const Entry& entry);
+    std::pair<bool, QString> store_script(const Entry& entry);
 };

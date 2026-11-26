@@ -3,6 +3,7 @@ import QtQuick
 Item {
     id: root
 
+    property string barStyle: "tmux"
     property string mode: "standard"
     property var modes: ["standard", "bookmarks", "dotfiles", "ssh", "projects", "scripts"]
 
@@ -36,6 +37,7 @@ Item {
         }
     }
 
+    readonly property bool isVimStyle: root.barStyle.toLowerCase() === "vim"
     readonly property int activeIndex: Math.max(0, modes.indexOf(root.mode))
 
     Rectangle {
@@ -48,23 +50,49 @@ Item {
             height: root.barHeight
             radius: root.radius
             color: root.accent
-            visible: modeRepeater.count > 0
+            visible: root.isVimStyle ? vimBadge.visible : modeRepeater.count > 0
 
             readonly property Item activeDelegate:
                 modeRepeater.count > 0 ? modeRepeater.itemAt(root.activeIndex) : null
 
-            x:     modesContainer.x + (activeDelegate ? activeDelegate.x     : 0)
-            width: activeDelegate ? activeDelegate.width : 0
+            x: root.isVimStyle
+               ? vimBadge.x
+               : modesContainer.x + (activeDelegate ? activeDelegate.x : 0)
+
+            width: root.isVimStyle
+                   ? vimBadge.width
+                   : (activeDelegate ? activeDelegate.width : 0)
 
             property bool animate: false
             onWidthChanged: if (width > 0) animate = true
 
-            Behavior on x     { enabled: pill.animate; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+            Behavior on x     { enabled: pill.animate && !root.isVimStyle; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
             Behavior on width { enabled: pill.animate; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
         }
 
         Item {
+            id: vimBadge
+            visible: root.isVimStyle
+            anchors.left: parent.left
+            anchors.leftMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            width: vimText.implicitWidth + 2 * root.pillPadding
+            height: vimText.implicitHeight + 6
+
+            Text {
+                id: vimText
+                anchors.centerIn: parent
+                text: root.getModeLabel(root.mode)
+                color: root.accentText
+                font.family: root.fontFamily
+                font.pixelSize: root.fontSize
+                font.bold: root.fontBold
+            }
+        }
+
+        Item {
             id: modesContainer
+            visible: !root.isVimStyle
             anchors.left: parent.left
             anchors.leftMargin: 10
             anchors.verticalCenter: parent.verticalCenter
