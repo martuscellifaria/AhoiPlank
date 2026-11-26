@@ -301,19 +301,6 @@ int main(int argc, char* argv[]) {
 
     QTimer::singleShot(0, win, apply_margins);
 
-    // QFileSystemWatcher config_watcher;
-    // const QString config_file =
-    //     QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-    //     + "/ahoiplank/config.json";
-    // config_watcher.addPath(config_file);
-    // QObject::connect(&config_watcher, &QFileSystemWatcher::fileChanged,
-    //                  &general_config, [&](const QString& path) {
-    //     if (!config_watcher.files().contains(path) && QFile::exists(path)) {
-    //         config_watcher.addPath(path);
-    //     }
-    //     general_config.reload();
-    // });
-
     QFileSystemWatcher config_watcher;
     const QString config_dir =
         QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
