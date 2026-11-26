@@ -40,67 +40,114 @@ Item {
     readonly property bool isVimStyle: root.barStyle.toLowerCase() === "vim"
     readonly property int activeIndex: Math.max(0, modes.indexOf(root.mode))
 
+    function ensureActiveVisible() {
+        if (root.isVimStyle || modeRepeater.count === 0) return
+        const item = modeRepeater.itemAt(root.activeIndex)
+        if (!item) return
+
+        const itemLeft = item.x
+        const itemRight = item.x + item.width
+        const viewLeft = modeFlickable.contentX
+        const viewRight = modeFlickable.contentX + modeFlickable.width
+
+        if (itemLeft < viewLeft) {
+            modeFlickable.contentX = itemLeft
+        } else if (itemRight > viewRight) {
+            modeFlickable.contentX = itemRight - modeFlickable.width
+        }
+    }
+
+    onActiveIndexChanged: Qt.callLater(ensureActiveVisible)
+
     Rectangle {
         anchors.fill: parent
         color: root.background
+        clip: true
 
-        Rectangle {
-            id: pill
-            anchors.verticalCenter: parent.verticalCenter
-            height: root.barHeight
-            radius: root.radius
-            color: root.accent
-            visible: root.isVimStyle ? vimBadge.visible : modeRepeater.count > 0
-
-            readonly property Item activeDelegate:
-                modeRepeater.count > 0 ? modeRepeater.itemAt(root.activeIndex) : null
-
-            x: root.isVimStyle
-               ? vimBadge.x
-               : modesContainer.x + (activeDelegate ? activeDelegate.x : 0)
-
-            width: root.isVimStyle
-                   ? vimBadge.width
-                   : (activeDelegate ? activeDelegate.width : 0)
-
-            property bool animate: false
-            onWidthChanged: if (width > 0) animate = true
-
-            Behavior on x     { enabled: pill.animate && !root.isVimStyle; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-            Behavior on width { enabled: pill.animate; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-        }
-
-        Item {
-            id: vimBadge
-            visible: root.isVimStyle
+        Flickable {
+            id: modeFlickable
             anchors.left: parent.left
             anchors.leftMargin: 10
-            anchors.verticalCenter: parent.verticalCenter
-            width: vimText.implicitWidth + 2 * root.pillPadding
-            height: vimText.implicitHeight + 6
+            anchors.right: hint.visible ? hint.left : parent.right
+            anchors.rightMargin: 10
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
 
-            Text {
-                id: vimText
-                anchors.centerIn: parent
-                text: root.getModeLabel(root.mode)
-                color: root.accentText
-                font.family: root.fontFamily
-                font.pixelSize: root.fontSize
-                font.bold: root.fontBold
+            clip: true
+            flickableDirection: Flickable.HorizontalFlick
+            boundsBehavior: Flickable.StopAtBounds
+            interactive: !root.isVimStyle && contentWidth > width
+            contentWidth: root.isVimStyle ? vimBadge.width : modeRow.implicitWidth
+            contentHeight: height
+
+            onWidthChanged: root.ensureActiveVisible()
+            onContentWidthChanged: root.ensureActiveVisible()
+
+            Behavior on contentX {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
             }
-        }
 
-        Item {
-            id: modesContainer
-            visible: !root.isVimStyle
-            anchors.left: parent.left
-            anchors.leftMargin: 10
-            anchors.verticalCenter: parent.verticalCenter
-            height: modeRow.implicitHeight
-            width: modeRow.implicitWidth
+            // Mouse wheel horizontal scrolling
+            WheelHandler {
+                enabled: modeFlickable.interactive
+                onWheel: (event) => {
+                    const delta = event.angleDelta.x !== 0 ? event.angleDelta.x : event.angleDelta.y
+                    const maxScroll = Math.max(0, modeFlickable.contentWidth - modeFlickable.width)
+                    modeFlickable.contentX = Math.max(0, Math.min(maxScroll, modeFlickable.contentX - delta * 0.5))
+                    event.accepted = true
+                }
+            }
+
+            Rectangle {
+                id: pill
+                anchors.verticalCenter: parent.verticalCenter
+                height: root.barHeight
+                radius: root.radius
+                color: root.accent
+                visible: root.isVimStyle ? vimBadge.visible : modeRepeater.count > 0
+
+                readonly property Item activeDelegate:
+                    modeRepeater.count > 0 ? modeRepeater.itemAt(root.activeIndex) : null
+
+                x: root.isVimStyle
+                   ? vimBadge.x
+                   : (activeDelegate ? activeDelegate.x : 0)
+
+                width: root.isVimStyle
+                       ? vimBadge.width
+                       : (activeDelegate ? activeDelegate.width : 0)
+
+                property bool animate: false
+                onWidthChanged: if (width > 0) animate = true
+
+                Behavior on x     { enabled: pill.animate && !root.isVimStyle; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                Behavior on width { enabled: pill.animate; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+            }
+
+            Item {
+                id: vimBadge
+                visible: root.isVimStyle
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                width: vimText.implicitWidth + 2 * root.pillPadding
+                height: vimText.implicitHeight + 6
+
+                Text {
+                    id: vimText
+                    anchors.centerIn: parent
+                    text: root.getModeLabel(root.mode)
+                    color: root.accentText
+                    font.family: root.fontFamily
+                    font.pixelSize: root.fontSize
+                    font.bold: root.fontBold
+                }
+            }
 
             Row {
                 id: modeRow
+                visible: !root.isVimStyle
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
                 spacing: root.itemSpacing
 
                 Repeater {
@@ -135,6 +182,8 @@ Item {
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
+            width: Math.min(implicitWidth, parent.width * 0.35)
+            horizontalAlignment: Text.AlignRight
             text: root.hintText
             visible: root.hintText.length > 0
             color: root.foreground
@@ -146,3 +195,4 @@ Item {
         }
     }
 }
+
