@@ -301,22 +301,51 @@ int main(int argc, char* argv[]) {
 
     QTimer::singleShot(0, win, apply_margins);
 
+    // QFileSystemWatcher config_watcher;
+    // const QString config_file =
+    //     QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+    //     + "/ahoiplank/config.json";
+    // config_watcher.addPath(config_file);
+    // QObject::connect(&config_watcher, &QFileSystemWatcher::fileChanged,
+    //                  &general_config, [&](const QString& path) {
+    //     if (!config_watcher.files().contains(path) && QFile::exists(path)) {
+    //         config_watcher.addPath(path);
+    //     }
+    //     general_config.reload();
+    // });
+
     QFileSystemWatcher config_watcher;
-    const QString config_file =
+    const QString config_dir =
         QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-        + "/ahoiplank/config.json";
-    config_watcher.addPath(config_file);
-    QObject::connect(&config_watcher, &QFileSystemWatcher::fileChanged,
-                     &general_config, [&](const QString& path) {
-        if (!config_watcher.files().contains(path) && QFile::exists(path)) {
-            config_watcher.addPath(path);
+        + "/ahoiplank";
+    const QString config_file = config_dir + "/config.json";
+
+    config_watcher.addPath(config_dir);
+    if (QFile::exists(config_file)) {
+        config_watcher.addPath(config_file);
+    }
+
+    auto reload_config = [&]() {
+        if (!QFile::exists(config_file)) {
+            return;
+        }
+        if (!config_watcher.files().contains(config_file)) {
+            config_watcher.addPath(config_file);
         }
         general_config.reload();
-    });
+    };
+
+    QObject::connect(&config_watcher, &QFileSystemWatcher::fileChanged,
+                     &general_config, reload_config);
+
+    QObject::connect(&config_watcher, &QFileSystemWatcher::directoryChanged,
+                     &general_config, reload_config);
 
     auto toggle = [&]() {
         const bool show = !win->isVisible();
         if (show) {
+            GeneralConfig::generate_config_dotfile();
+            BookmarksSource::generate_bookmarks_dotfile();
             controller.set_text_editor(general_config.text_editor());
             controller.set_terminal(general_config.terminal());
             apply_margins();
