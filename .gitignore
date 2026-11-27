@@ -30,6 +30,7 @@ cmake_install.cmake
 App/version.h
 App/version.c
 App/version.rc
+App/.qmlls.ini
 
 PKGBUILD
 .SRCINFO
@@ -38,6 +39,7 @@ pkg/
 *.pkg.tar.zst
 *.pkg.tar.xz
 *.pkg.tar.gz
+.qmlls.ini
 
 ahoiplank-*.tar.gz
 result
