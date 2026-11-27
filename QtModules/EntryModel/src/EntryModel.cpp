@@ -392,21 +392,31 @@ bool EntryModel::launch(int row, const QString& search_input) {
         entry.exec = search_input;
         const bool ok = launchers_[static_cast<size_t>(mode_)]
                             ->launch(entry, text_editor_, terminal_);
-        if (ok) {
-            bump_frecency(entry);
-            resort();
-            emit dismissed();
+        if (!ok) {
+            const QString error_message = mode_to_string(mode_) +
+                " launch error: you are trying to run " + 
+                entry.exec + ". Is the input right?";
+            emit errorOccurred(error_message);
+            return ok;
         }
+        bump_frecency(entry);
+        resort();
+        emit dismissed();
         return ok;
     }
     const Entry& entry = all_.at(filtered_idx_.at(row));
     const bool ok = launchers_[static_cast<size_t>(mode_)]
                         ->launch(entry, text_editor_, terminal_);
-    if (ok) {
-        bump_frecency(entry);
-        resort();
-        emit dismissed();
+    if (!ok) {
+        const QString error_message = mode_to_string(mode_) +
+            " launch error: you are trying to run " + 
+            entry.exec + ". Is the input right?";
+        emit errorOccurred(error_message);
+        return ok;
     }
+    bump_frecency(entry);
+    resort();
+    emit dismissed();
     return ok;
 }
 

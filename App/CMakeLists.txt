@@ -22,6 +22,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 set(PROJECT_QML_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/qml/Main.qml
     ${CMAKE_CURRENT_SOURCE_DIR}/qml/StatusBar.qml
+    ${CMAKE_CURRENT_SOURCE_DIR}/qml/ErrorToast.qml
 )
 
 foreach(f IN LISTS PROJECT_QML_FILES)

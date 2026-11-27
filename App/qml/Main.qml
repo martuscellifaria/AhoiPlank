@@ -81,6 +81,23 @@ Window {
                 y: window.bar_on_top ? 0 : layout.height - height
             }
 
+            ErrorToast {
+                id: error_toast
+                z: 100
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: theme.layout_margin + 8
+
+                background: theme.error || "#f38ba8"
+                foreground: theme.bg
+                borderColor: theme.border
+                borderWidth: theme.border_width
+                radius: theme.radius_item
+                fontFamily: theme.font_family
+                fontSize: theme.font_size_comment
+                fontBold: theme.font_bold
+            }
+
             ColumnLayout {
                 spacing: theme.layout_spacing
 
