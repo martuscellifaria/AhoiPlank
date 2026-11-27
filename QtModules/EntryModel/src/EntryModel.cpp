@@ -384,6 +384,17 @@ bool EntryModel::launch(int row, const QString& search_input) {
             user_entry = true;
         }
         else {
+            if (mode_ != Mode::Standard && mode_ != Mode::Bookmarks) {
+                const QString error_message = mode_to_string(mode_) +
+                    " launch error: you are trying to run on "
+                    + terminal_ + " terminal. Is it right?";
+                emit errorOccurred(error_message);
+                return false;
+            }
+            const QString error_message = mode_to_string(mode_) +
+                " launch error: you are trying to run " + 
+                search_input + ". Is it right?";
+            emit errorOccurred(error_message);
             return false;
         }
     }
@@ -393,9 +404,16 @@ bool EntryModel::launch(int row, const QString& search_input) {
         const bool ok = launchers_[static_cast<size_t>(mode_)]
                             ->launch(entry, text_editor_, terminal_);
         if (!ok) {
+            if (mode_ != Mode::Standard && mode_ != Mode::Bookmarks) {
+                const QString error_message = mode_to_string(mode_) +
+                    " launch error: you are trying to run " +
+                    search_input + " on " + terminal_ + ". Is it right?";
+                emit errorOccurred(error_message);
+                return ok;
+            }
             const QString error_message = mode_to_string(mode_) +
                 " launch error: you are trying to run " + 
-                entry.exec + ". Is the input right?";
+                entry.exec + ". Is it right?";
             emit errorOccurred(error_message);
             return ok;
         }
@@ -408,9 +426,17 @@ bool EntryModel::launch(int row, const QString& search_input) {
     const bool ok = launchers_[static_cast<size_t>(mode_)]
                         ->launch(entry, text_editor_, terminal_);
     if (!ok) {
+        if (mode_ != Mode::Standard && mode_ != Mode::Bookmarks) {
+            const QString error_message = mode_to_string(mode_) +
+                " launch error: you are trying to run " +
+                entry.exec + " on " +
+                terminal_ + ". Is it right?";
+            emit errorOccurred(error_message);
+            return ok;
+        }
         const QString error_message = mode_to_string(mode_) +
             " launch error: you are trying to run " + 
-            entry.exec + ". Is the input right?";
+            entry.exec + ". Is it right?";
         emit errorOccurred(error_message);
         return ok;
     }

@@ -42,6 +42,9 @@ Window {
                 app.set_filter(search.text)
             }
         }
+        function onErrorOccurred(message) {
+            error_toast.show(message)
+        }
     }
 
     Shortcut { sequence: "Esc";    onActivated: app.dismiss() }

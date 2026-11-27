@@ -67,13 +67,6 @@ std::pair<bool, QString> ScriptLauncher::store_script(const Entry& entry) {
         QDir().mkpath(QFileInfo(path).absolutePath());
     }
 
-    for (const auto& v : arr) {
-        const QJsonObject o = v.toObject();
-        if (o.value("script").toString() == entry.exec) {
-            return { false, entry.exec };
-        }
-    }
-
     bool persistent_terminal = false;
     QString persistent = "--persistent ";
     QString exec_command = entry.exec;
@@ -82,6 +75,12 @@ std::pair<bool, QString> ScriptLauncher::store_script(const Entry& entry) {
         exec_command = exec_command.sliced(persistent.length());
     }
 
+    for (const auto& v : arr) {
+        const QJsonObject o = v.toObject();
+        if (o.value("script").toString() == exec_command) {
+            return { persistent_terminal, exec_command };
+        }
+    }
 
     QJsonObject entry_obj;
     entry_obj.insert("name", exec_command);
