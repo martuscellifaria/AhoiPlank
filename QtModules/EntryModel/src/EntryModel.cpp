@@ -385,15 +385,17 @@ bool EntryModel::launch(int row, const QString& search_input) {
         }
         else {
             if (mode_ != Mode::Standard && mode_ != Mode::Bookmarks) {
-                const QString error_message = mode_to_string(mode_) +
-                    " launch error: you are trying to run on "
-                    + terminal_ + " terminal. Is it right?";
-                emit errorOccurred(error_message);
+                if (!search_input.isEmpty()) {
+                    const QString error_message = mode_to_string(mode_) +
+                        " launch error: you are trying to run on "
+                        + terminal_ + " terminal. Check your config.";
+                    emit errorOccurred(error_message);
+                }
                 return false;
             }
             const QString error_message = mode_to_string(mode_) +
                 " launch error: you are trying to run " + 
-                search_input + ". Is it right?";
+                search_input + ". Check your config.";
             emit errorOccurred(error_message);
             return false;
         }
@@ -407,7 +409,7 @@ bool EntryModel::launch(int row, const QString& search_input) {
             if (mode_ != Mode::Standard && mode_ != Mode::Bookmarks) {
                 const QString error_message = mode_to_string(mode_) +
                     " launch error: you are trying to run " +
-                    search_input + " on " + terminal_ + ". Is it right?";
+                    search_input + " on " + terminal_ + ". Check your config.";
                 emit errorOccurred(error_message);
                 return ok;
             }
