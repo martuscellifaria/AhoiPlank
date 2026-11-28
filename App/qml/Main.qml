@@ -42,7 +42,7 @@ Window {
             }
         }
         function onErrorOccurred(message) {
-            error_toast.show(message);
+            status_bar.showMessage(message);
         }
     }
 
@@ -69,7 +69,7 @@ Window {
 
             StatusBar {
                 id: status_bar
-                visible: theme.status_bar_visible
+                visible: theme.status_bar_visible || status_bar.hasMessage
                 barStyle: theme.status_bar_style || "tmux"
                 mode: app.modeString
                 modes: window.mode_order
@@ -83,27 +83,21 @@ Window {
                 fontFamily: theme.font_family
                 fontSize: theme.font_size_comment
                 fontBold: theme.font_bold
-                hintText: isVimStyle ? "[Tab/Backtab]" : "[Alt+index]"
+
+                messageBackground: theme.error || "#f38ba8"
+                messageForeground: theme.bg
+                messageDuration: 4000
+
                 x: 0
                 width: layout.width
                 y: window.bar_on_top ? 0 : layout.height - height
-            }
 
-            ErrorToast {
-                id: error_toast
-                z: 100
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: theme.layout_margin + 8
-
-                background: theme.error || "#f38ba8"
-                foreground: theme.bg
-                borderColor: theme.border
-                borderWidth: theme.border_width
-                radius: theme.radius_item
-                fontFamily: theme.font_family
-                fontSize: theme.font_size_comment
-                fontBold: theme.font_bold
+                Behavior on y {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
 
             ColumnLayout {
@@ -156,16 +150,12 @@ Window {
                         }
 
                         Keys.onTabPressed: event => {
-                            if (status_bar.isVimStyle) {
-                                app.cycle_mode(1);
-                                return;
-                            }
+                            app.cycle_mode(1);
+                            return;
                         }
                         Keys.onBacktabPressed: event => {
-                            if (status_bar.isVimStyle) {
-                                app.cycle_mode(-1);
-                                return;
-                            }
+                            app.cycle_mode(-1);
+                            return;
                         }
 
                         Keys.onLeftPressed: event => {
