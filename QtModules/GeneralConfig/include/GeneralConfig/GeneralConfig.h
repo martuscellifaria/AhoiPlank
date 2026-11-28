@@ -54,6 +54,7 @@ class GeneralConfig : public QObject {
 
     Q_PROPERTY(QString text_editor READ text_editor NOTIFY changed)
     Q_PROPERTY(QString terminal READ terminal NOTIFY changed)
+    Q_PROPERTY(QString status_bar_style READ status_bar_style NOTIFY changed)
 
 public:
     explicit GeneralConfig(QObject *parent = nullptr);
@@ -89,6 +90,7 @@ public:
     int status_bar_height() const { return status_bar_height_; }
     int status_bar_gap() const { return status_bar_gap_; }
     int status_bar_pill_padding() const { return status_bar_pill_padding_; }
+    QString status_bar_style() const { return status_bar_style_; }
 
     int layout_margin() const { return layout_margin_; }
     int layout_spacing() const { return layout_spacing_; }
@@ -154,4 +156,5 @@ private:
 
     QString text_editor_ = "vim";
     QString terminal_ = "alacritty";
+    QString status_bar_style_ = "tmux";
 };

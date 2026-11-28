@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStandardPaths>
+#include <qhashfunctions.h>
 
 namespace {
 
@@ -135,6 +136,7 @@ void GeneralConfig::reload() {
 
     QString text_editor = "vim";
     QString terminal = "alacritty";
+    QString status_bar_style = "tmux";
 
     QFile f(config_path());
     if (f.open(QIODevice::ReadOnly)) {
@@ -175,6 +177,7 @@ void GeneralConfig::reload() {
             status_bar_height = int_or(style, "status_bar_height", status_bar_height);
             status_bar_gap = int_or(style, "status_bar_gap", status_bar_gap);
             status_bar_pill_padding = int_or(style, "status_bar_pill_padding", status_bar_pill_padding);
+            status_bar_style = string_or(style, "status_bar_style", status_bar_style);
 
             layout_margin = int_or(style, "layout_margin", layout_margin);
             layout_spacing = int_or(style, "layout_spacing", layout_spacing);
@@ -205,7 +208,7 @@ void GeneralConfig::reload() {
     selection_ = selection;
     accent_ = accent;
 
-    font_family_ = font_family;
+    font_family_ = std::move(font_family);
     font_size_search_ = font_size_search;
     font_size_title_ = font_size_title;
     font_size_comment_ = font_size_comment;
@@ -217,17 +220,18 @@ void GeneralConfig::reload() {
 
     screen_width_ = screen_width;
     screen_height_ = screen_height;
-    vertical_position_ = vertical_position;
+    vertical_position_ = std::move(vertical_position);
     columns_ = columns;
 
     status_bar_visible_ = status_bar_visible;
-    status_bar_position_ = status_bar_position;
+    status_bar_position_ = std::move(status_bar_position);
     status_bar_bg_ = status_bar_bg;
     status_bar_fg_ = status_bar_fg;
     status_bar_pill_ = status_bar_pill;
     status_bar_height_ = status_bar_height;
     status_bar_gap_ = status_bar_gap;
     status_bar_pill_padding_ = status_bar_pill_padding;
+    status_bar_style_ = std::move(status_bar_style);
 
     layout_margin_ = layout_margin;
     layout_spacing_ = layout_spacing;
@@ -238,8 +242,8 @@ void GeneralConfig::reload() {
     icon_size_ = icon_size;
     icon_spacing_ = icon_spacing;
 
-    text_editor_ = text_editor;
-    terminal_ = terminal;
+    text_editor_ = std::move(text_editor);
+    terminal_ = std::move(terminal);
 
     emit changed();
 }
@@ -287,6 +291,7 @@ bool GeneralConfig::generate_config_dotfile() {
         { QStringLiteral("status_bar_height"), 20 },
         { QStringLiteral("status_bar_gap"), 12 },
         { QStringLiteral("status_bar_pill_padding"), 14 },
+        { QStringLiteral("status_bar_style"), QStringLiteral("tmux") },
         { QStringLiteral("layout_margin"), 16 },
         { QStringLiteral("layout_spacing"), 12 },
         { QStringLiteral("search_padding"), 8 },

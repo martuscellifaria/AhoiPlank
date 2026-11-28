@@ -18,8 +18,8 @@ Its features are:
 - projects mode for jumping to your pinned working projects
 - scripts mode for running custom scripts on a terminal
 - instant toggling after warmup
-- vim/tmux-style status bar
-- mode switcher with `Alt + index`
+- vim/tmux-style status bar, configurable.
+- mode switcher with `Alt + index` or `Tab/Backtab`
 - for keeping the search bar editable, you can move through it char by char using `Ctrl + left/right`.
 
 Currently tested on `sway` and `hyprland`, but should work on other Wayland compositors as well.

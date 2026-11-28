@@ -72,10 +72,12 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         else if (arg == "--help") {
-            std::println("ahoiplank is a customizable launcher for Wayland.\n"
+            std::println("ahoiplank is a customizable launcher for Wayland centered on developer experience.\n"
+                    "Navigate through the different modes with either [Alt+1-last defined mode] or [Tab/Backtab].\n"
+                    "ahoiplank has two styles of status bars. You can pick a tmux-style (default) or a vim-style bar.\n"
                     "You can find more at https://github.com/martuscellifaria/ahoiplank\n\n"
                     "Usage: ahoiplank [OPTIONAL], "
-                    "where [OPTIONAL] is one among the following:\n\n"
+                    "where [OPTIONAL] is one among the following:\n"
                     "    --daemon-start\n"
                     "\tStarts ahoiplank daemon in background to better user feel.\n"
                     "    --daemon-stop\n"

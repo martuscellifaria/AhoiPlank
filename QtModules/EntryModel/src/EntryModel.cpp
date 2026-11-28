@@ -384,6 +384,19 @@ bool EntryModel::launch(int row, const QString& search_input) {
             user_entry = true;
         }
         else {
+            if (mode_ != Mode::Standard && mode_ != Mode::Bookmarks) {
+                if (!search_input.isEmpty()) {
+                    const QString error_message = mode_to_string(mode_) +
+                        " launch error: you are trying to run on "
+                        + terminal_ + " terminal. Check your config.";
+                    emit errorOccurred(error_message);
+                }
+                return false;
+            }
+            const QString error_message = mode_to_string(mode_) +
+                " launch error: you are trying to run " + 
+                search_input + ". Check your config.";
+            emit errorOccurred(error_message);
             return false;
         }
     }
@@ -392,21 +405,46 @@ bool EntryModel::launch(int row, const QString& search_input) {
         entry.exec = search_input;
         const bool ok = launchers_[static_cast<size_t>(mode_)]
                             ->launch(entry, text_editor_, terminal_);
-        if (ok) {
-            bump_frecency(entry);
-            resort();
-            emit dismissed();
+        if (!ok) {
+            if (mode_ != Mode::Standard && mode_ != Mode::Bookmarks) {
+                const QString error_message = mode_to_string(mode_) +
+                    " launch error: you are trying to run " +
+                    search_input + " on " + terminal_ + ". Check your config.";
+                emit errorOccurred(error_message);
+                return ok;
+            }
+            const QString error_message = mode_to_string(mode_) +
+                " launch error: you are trying to run " + 
+                entry.exec + ". Is it right?";
+            emit errorOccurred(error_message);
+            return ok;
         }
+        bump_frecency(entry);
+        resort();
+        emit dismissed();
         return ok;
     }
     const Entry& entry = all_.at(filtered_idx_.at(row));
     const bool ok = launchers_[static_cast<size_t>(mode_)]
                         ->launch(entry, text_editor_, terminal_);
-    if (ok) {
-        bump_frecency(entry);
-        resort();
-        emit dismissed();
+    if (!ok) {
+        if (mode_ != Mode::Standard && mode_ != Mode::Bookmarks) {
+            const QString error_message = mode_to_string(mode_) +
+                " launch error: you are trying to run " +
+                entry.exec + " on " +
+                terminal_ + ". Is it right?";
+            emit errorOccurred(error_message);
+            return ok;
+        }
+        const QString error_message = mode_to_string(mode_) +
+            " launch error: you are trying to run " + 
+            entry.exec + ". Is it right?";
+        emit errorOccurred(error_message);
+        return ok;
     }
+    bump_frecency(entry);
+    resort();
+    emit dismissed();
     return ok;
 }
 

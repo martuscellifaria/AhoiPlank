@@ -34,8 +34,11 @@ QVector<Entry> ScriptsSource::load() {
         e.name = o.value("name").toString();
         e.exec = o.value("script").toString();
         e.id = e.exec;
-        e.comment = o.value("script").toString();
         e.persistent_terminal = o.value("persistent_terminal").toBool();
+        e.comment = "Runs " + o.value("name").toString();
+        if (e.persistent_terminal) {
+            e.comment += " in a persistent terminal session";
+        }
         e.icon = o.value("icon").toString();
         if (e.icon.isEmpty()) {
             e.icon = QStringLiteral("terminal");

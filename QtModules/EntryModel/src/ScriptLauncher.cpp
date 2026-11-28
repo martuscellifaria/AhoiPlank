@@ -6,7 +6,10 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStandardPaths>
+#include <exception>
 #include <print>
+#include <qstringview.h>
+#include <stdexcept>
 
 bool ScriptLauncher::launch(const Entry& entry,
                          const QString&,
@@ -16,15 +19,21 @@ bool ScriptLauncher::launch(const Entry& entry,
         std::println(stderr, "script: no terminal found, set terminal in config.json");
         return false;
     }
-    bool new_entry = store_script(entry);
-    if (entry.persistent_terminal || new_entry) {
-        const QString wrapped_cmd = QStringLiteral("%1; exec \"${SHELL:-sh}\"").arg(entry.exec);
-        return TerminalLauncher::run_in_terminal_argv(terminal, { "sh", "-c", wrapped_cmd });
+    try {
+        const auto stored_script = store_script(entry);
+        if (entry.persistent_terminal || stored_script.first) {
+            const QString wrapped_cmd = QStringLiteral("%1; exec \"${SHELL:-sh}\"").arg(stored_script.second);
+            return TerminalLauncher::run_in_terminal_argv(terminal, { "sh", "-c", wrapped_cmd });
+        }
+        return TerminalLauncher::run_in_terminal_argv(terminal, { "sh", "-c", stored_script.second });
     }
-    return TerminalLauncher::run_in_terminal_argv(terminal, { "sh", "-c", entry.exec });
+    catch (const std::exception& err) {
+        std::println(stderr, "{}", err.what());
+        return false;
+    }
 }
 
-bool ScriptLauncher::store_script(const Entry& entry) {
+std::pair<bool, QString> ScriptLauncher::store_script(const Entry& entry) {
     const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                          + "/ahoiplank/scripts.json";
     const QDir cwd = QDir::current();
@@ -37,9 +46,8 @@ bool ScriptLauncher::store_script(const Entry& entry) {
     if (QFileInfo::exists(path)) {
         QFile f(path);
         if (!f.open(QIODevice::ReadOnly)) {
-            std::println(stderr, "scripts: failed to open {} for reading ({})",
-                         path.toStdString(), f.errorString().toStdString());
-            return true;
+            throw std::runtime_error(std::format("scripts: failed to open {} for reading ({})",
+                         path.toStdString(), f.errorString().toStdString()));
         }
 
         const QByteArray raw = f.readAll();
@@ -49,9 +57,8 @@ bool ScriptLauncher::store_script(const Entry& entry) {
             QJsonParseError perr{};
             root = QJsonDocument::fromJson(raw, &perr).object();
             if (perr.error != QJsonParseError::NoError) {
-                std::println(stderr, "scripts: {} is not valid json ({})",
-                             path.toStdString(), perr.errorString().toStdString());
-                return true;
+                throw std::runtime_error(std::format("scripts: failed to open {} for reading ({})",
+                             path.toStdString(), f.errorString().toStdString()));
             }
             arr = root.value("scripts").toArray();
         }
@@ -60,29 +67,36 @@ bool ScriptLauncher::store_script(const Entry& entry) {
         QDir().mkpath(QFileInfo(path).absolutePath());
     }
 
+    bool persistent_terminal = false;
+    QString persistent = "--persistent ";
+    QString exec_command = entry.exec;
+    if (exec_command.startsWith(persistent)) {
+        persistent_terminal = true;
+        exec_command = exec_command.sliced(persistent.length());
+    }
+
     for (const auto& v : arr) {
         const QJsonObject o = v.toObject();
-        if (o.value("script").toString() == entry.exec) {
-            return false;
+        if (o.value("script").toString() == exec_command) {
+            return { persistent_terminal, exec_command };
         }
     }
 
     QJsonObject entry_obj;
-    entry_obj.insert("name", entry.exec);
-    entry_obj.insert("script", entry.exec);
+    entry_obj.insert("name", exec_command);
+    entry_obj.insert("script", exec_command);
     entry_obj.insert("icon", "utilities-terminal");
-    entry_obj.insert("persistent_terminal", true);
+    entry_obj.insert("persistent_terminal", persistent_terminal);
     arr.append(entry_obj);
     root.insert("scripts", arr);
 
     QFile f(path);
     if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        std::println(stderr, "projects: failed to open {} for writing ({})",
-                     path.toStdString(), f.errorString().toStdString());
-        return true;
+        throw std::runtime_error(std::format("scripts: failed to open {} for reading ({})",
+                     path.toStdString(), f.errorString().toStdString()));
     }
 
     f.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-    return true;
+    return { persistent_terminal, exec_command };
 }
 

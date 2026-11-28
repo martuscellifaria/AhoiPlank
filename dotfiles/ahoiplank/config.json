@@ -11,6 +11,8 @@
         "status_bar_height": 20,
         "status_bar_gap": 12,
         "status_bar_pill_padding": 14,
+        "status_bar_style": "tmux",
+
 
         "layout_margin": 16,
         "layout_spacing": 12,

@@ -154,6 +154,7 @@ signals:
     void dismissed();
     void resetRequested();
     void modeChanged();
+    void errorOccurred(const QString& message);
 
 private:
     void rebuild();

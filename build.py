@@ -13,7 +13,8 @@ def run_cmake_on_linux(build_type: str, version: str = "99.99.99", company: str 
         f'-DVERSION_ARG="{version}" '
         f'-DCOMPANY_ARG="{company}" '
         f'-DDESCRIPTION_ARG="{description}" '
-        f'-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'
+        f'-DCMAKE_EXPORT_COMPILE_COMMANDS=ON '
+        f'-DQT_QML_GENERATE_QMLLS_INI=ON'
     )
     if build_tests:
         flags += ' -DBUILD_TESTING=ON'
